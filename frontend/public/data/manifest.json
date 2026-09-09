@@ -1,0 +1,38 @@
+{
+  "sites": [
+    {
+      "id": "site_001",
+      "name": "Hurricane Michael — Mexico Beach",
+      "source": "xbd_test",
+      "center": { "lat": 29.9457, "lng": -85.4055 },
+      "bounds": [[29.9407, -85.4105], [29.9507, -85.4005]],
+      "pre_image": "/data/site_001/pre.png",
+      "post_image": "/data/site_001/post.png",
+      "damage_geojson": "/data/site_001/damage.geojson",
+      "summary": {
+        "total_structures": 6,
+        "no_damage": 1,
+        "minor_damage": 2,
+        "major_damage": 2,
+        "destroyed": 1
+      }
+    },
+    {
+      "id": "site_002",
+      "name": "Midwest Flooding — Nebraska",
+      "source": "xbd_test",
+      "center": { "lat": 41.2565, "lng": -95.9345 },
+      "bounds": [[41.2515, -95.9395], [41.2615, -95.9295]],
+      "pre_image": "/data/site_002/pre.png",
+      "post_image": "/data/site_002/post.png",
+      "damage_geojson": "/data/site_002/damage.geojson",
+      "summary": {
+        "total_structures": 5,
+        "no_damage": 2,
+        "minor_damage": 1,
+        "major_damage": 1,
+        "destroyed": 1
+      }
+    }
+  ]
+}
