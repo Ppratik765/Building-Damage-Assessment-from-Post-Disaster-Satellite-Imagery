@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4080, 29.9430], [-85.4075, 29.9430], [-85.4075, 29.9435], [-85.4080, 29.9435], [-85.4080, 29.9430]]]
+      },
+      "properties": { "building_id": 0, "damage_tier": "no-damage", "confidence": 0.92 }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4065, 29.9440], [-85.4058, 29.9440], [-85.4058, 29.9447], [-85.4065, 29.9447], [-85.4065, 29.9440]]]
+      },
+      "properties": { "building_id": 1, "damage_tier": "minor-damage", "confidence": 0.78 }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4045, 29.9450], [-85.4038, 29.9450], [-85.4038, 29.9458], [-85.4045, 29.9458], [-85.4045, 29.9450]]]
+      },
+      "properties": { "building_id": 2, "damage_tier": "minor-damage", "confidence": 0.65 }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4090, 29.9460], [-85.4082, 29.9460], [-85.4082, 29.9468], [-85.4090, 29.9468], [-85.4090, 29.9460]]]
+      },
+      "properties": { "building_id": 3, "damage_tier": "major-damage", "confidence": 0.85 }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4030, 29.9470], [-85.4022, 29.9470], [-85.4022, 29.9478], [-85.4030, 29.9478], [-85.4030, 29.9470]]]
+      },
+      "properties": { "building_id": 4, "damage_tier": "major-damage", "confidence": 0.71 }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-85.4055, 29.9480], [-85.4048, 29.9480], [-85.4048, 29.9488], [-85.4055, 29.9488], [-85.4055, 29.9480]]]
+      },
+      "properties": { "building_id": 5, "damage_tier": "destroyed", "confidence": 0.94 }
+    }
+  ]
+}
