@@ -1,0 +1,21 @@
+# data & models
+data/raw/
+data/processed/
+*.tif
+*.tiff
+*.pt
+*.pth
+*.onnx
+*.h5
+
+# notebooks checkpoints
+.ipynb_checkpoints/
+
+# node / next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# env
+.env
+.env.local
