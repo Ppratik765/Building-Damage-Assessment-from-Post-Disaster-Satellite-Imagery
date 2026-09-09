@@ -6,6 +6,7 @@ import {
   ImageOverlay,
   GeoJSON,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -25,30 +26,58 @@ function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression }) {
   return null;
 }
 
-/** Custom clip-path swipe on the post image overlay */
+/**
+ * Applies the clip-path to the post-image overlay and reports the overlay's
+ * on-screen bounding rect back up to the parent. The rect is needed there
+ * because `fitBounds` typically letterboxes the (near-square) satellite
+ * tile inside a much wider map container -- the swipe handle has to be
+ * positioned against the image's own box, not the container's, or the
+ * handle and the actual pre/post split visually diverge.
+ */
 function SwipeController({
-  position,
+  fraction,
   postOverlayRef,
+  onOverlayRectChange,
 }: {
-  position: number;
+  fraction: number;
   postOverlayRef: React.RefObject<L.ImageOverlay | null>;
+  onOverlayRectChange: (rect: DOMRect | null) => void;
 }) {
-  const map = useMap();
+  const applyClip = useCallback(() => {
+    const el = postOverlayRef.current?.getElement();
+    if (!el) {
+      onOverlayRectChange(null);
+      return;
+    }
+    // clip-path: inset(top right bottom left) -- percentages here are
+    // relative to the element's OWN box, so this is correct as long as
+    // `fraction` is also measured against the same box (see SwipeMap).
+    el.style.clipPath = `inset(0 0 0 ${fraction * 100}%)`;
+    onOverlayRectChange(el.getBoundingClientRect());
+  }, [fraction, postOverlayRef, onOverlayRectChange]);
 
   useEffect(() => {
-    if (!postOverlayRef.current) return;
-    const el = postOverlayRef.current.getElement();
-    if (!el) return;
-    // clip-path: inset(top right bottom left)
-    // We clip from the left side based on swipe position
-    el.style.clipPath = `inset(0 0 0 ${position}%)`;
-  }, [position, postOverlayRef, map]);
+    applyClip();
+  }, [applyClip]);
+
+  // Re-sync on pan/zoom/resize -- the overlay's on-screen rect (and so the
+  // handle's aligned position) changes then too, even though `fraction`
+  // itself hasn't.
+  useMapEvents({
+    move: applyClip,
+    zoom: applyClip,
+    resize: applyClip,
+  });
 
   return null;
 }
 
 export default function SwipeMap({ site }: SwipeMapProps) {
-  const [swipePosition, setSwipePosition] = useState(50);
+  // `fraction` (0-1) is the swipe position measured along the POST-IMAGE's
+  // own width -- this is what actually feeds the clip-path, so it's the
+  // single source of truth both the handle and the clip stay in sync with.
+  const [fraction, setFraction] = useState(0.5);
+  const [overlayRect, setOverlayRect] = useState<DOMRect | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [damageData, setDamageData] = useState<DamageGeoJSON | null>(null);
   const [showDamage, setShowDamage] = useState(true);
@@ -68,16 +97,19 @@ export default function SwipeMap({ site }: SwipeMapProps) {
       .catch((err) => console.error("Failed to load damage data:", err));
   }, [site.damage_geojson]);
 
-  // Swipe handlers
+  // Swipe handlers -- measured against the overlay image's own bounding
+  // rect (falling back to the last-known rect if a drag event fires
+  // between renders), not the outer container.
   const handleSwipeMove = useCallback(
     (clientX: number) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      const el = postOverlayRef.current?.getElement();
+      const rect = el ? el.getBoundingClientRect() : overlayRect;
+      if (!rect || rect.width === 0) return;
       const x = clientX - rect.left;
-      const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
-      setSwipePosition(pct);
+      const frac = Math.max(0, Math.min(1, x / rect.width));
+      setFraction(frac);
     },
-    []
+    [overlayRect]
   );
 
   const handleMouseMove = useCallback(
@@ -117,6 +149,17 @@ export default function SwipeMap({ site }: SwipeMapProps) {
       window.removeEventListener("touchend", stopDragging);
     };
   }, [isDragging, handleMouseMove, handleTouchMove, stopDragging]);
+
+  // Handle's on-screen `left`, in px relative to the container -- derived
+  // from the overlay's own rect so the divider visually lines up with
+  // where the image actually splits, instead of assuming the image spans
+  // the full container width.
+  let handleLeftPx: number | null = null;
+  if (overlayRect && containerRef.current) {
+    const containerRect = containerRef.current.getBoundingClientRect();
+    handleLeftPx =
+      overlayRect.left - containerRect.left + fraction * overlayRect.width;
+  }
 
   // GeoJSON styling
   const geoJsonStyle = (feature: GeoJSON.Feature | undefined) => {
@@ -180,8 +223,9 @@ export default function SwipeMap({ site }: SwipeMapProps) {
           />
 
           <SwipeController
-            position={swipePosition}
+            fraction={fraction}
             postOverlayRef={postOverlayRef}
+            onOverlayRectChange={setOverlayRect}
           />
 
           {/* Damage overlay */}
@@ -196,33 +240,36 @@ export default function SwipeMap({ site }: SwipeMapProps) {
         </MapContainer>
       </div>
 
-      {/* Swipe divider */}
-      <div
-        className="swipe-handle absolute top-0 bottom-0 z-[1000]"
-        style={{ left: `${swipePosition}%`, transform: "translateX(-50%)" }}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onTouchStart={() => setIsDragging(true)}
-      >
-        <div className="swipe-line absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-white/80 transition-all" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/90 border-2 border-white/80 flex items-center justify-center backdrop-blur-sm">
-          <svg
-            className="w-5 h-5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-            />
-          </svg>
+      {/* Swipe divider -- only rendered once we know where the image
+          actually is, so it never flashes at a wrong position on load */}
+      {handleLeftPx !== null && (
+        <div
+          className="swipe-handle absolute top-0 bottom-0 z-[1000]"
+          style={{ left: `${handleLeftPx}px`, transform: "translateX(-50%)" }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onTouchStart={() => setIsDragging(true)}
+        >
+          <div className="swipe-line absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-white/80 transition-all" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/90 border-2 border-white/80 flex items-center justify-center backdrop-blur-sm">
+            <svg
+              className="w-5 h-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+              />
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Labels */}
       <div
