@@ -1,11 +1,11 @@
-# Building Damage Assessment from Post-Disaster Satellite Imagery
+# Damage Assessment from Post-Disaster Satellite Imagery
 
 An end-to-end deep learning and geospatial web platform for rapid automated building damage assessment following natural disasters.
 
 Built on the **xBD dataset**, this repository contains:
-1. **`notebook/`**: A self-contained PyTorch Siamese U-Net (`Siam-UNet-Diff`) training, validation, and evaluation pipeline optimized for single-GPU environments (Lightning AI Studio L4 GPU / CUDA or CPU dry-run), exporting standardized geo-referenced damage assessments.
-2. **`frontend/`**: A modern Next.js 14 web application featuring an interactive before/after satellite image swipe comparison, classified damage vector overlays, summary analytics, and disaster site profiles.
-3. **`docs/`**: Strict data contract defining the shared interface between ML inference outputs and the visualization frontend.
+1. **` notebook/`**: A self-contained PyTorch Siamese U-Net (`Siam-UNet-Diff`) training, validation, and evaluation pipeline optimised for single-GPU environments (Lightning AI Studio L4 GPU / CUDA or CPU dry-run), exporting standardised geo-referenced damage assessments.
+2. **` frontend/`**: A modern Next.js 14 web application featuring an interactive before/after satellite image swipe comparison, classified damage vector overlays, summary analytics, and disaster site profiles.
+3. **` docs/`**: Strict data contract defining the shared interface between ML inference outputs and the visualisation frontend.
 
 ---
 
