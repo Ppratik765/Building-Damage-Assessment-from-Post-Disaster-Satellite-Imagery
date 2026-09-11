@@ -2,36 +2,205 @@
   "sites": [
     {
       "id": "site_001",
-      "name": "Hurricane Michael — Mexico Beach",
+      "name": "Train/Images/Socal Fire",
       "source": "xbd_test",
-      "center": { "lat": 29.9457, "lng": -85.4055 },
-      "bounds": [[29.9407, -85.4105], [29.9507, -85.4005]],
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.005,
+          -0.005
+        ],
+        [
+          0.005,
+          0.005
+        ]
+      ],
       "pre_image": "/data/site_001/pre.png",
       "post_image": "/data/site_001/post.png",
       "damage_geojson": "/data/site_001/damage.geojson",
       "summary": {
-        "total_structures": 6,
-        "no_damage": 1,
-        "minor_damage": 2,
-        "major_damage": 2,
-        "destroyed": 1
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
       }
     },
     {
       "id": "site_002",
-      "name": "Midwest Flooding — Nebraska",
+      "name": "Train/Images/Hurricane Matthew",
       "source": "xbd_test",
-      "center": { "lat": 41.2565, "lng": -95.9345 },
-      "bounds": [[41.2515, -95.9395], [41.2615, -95.9295]],
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.005,
+          -0.005
+        ],
+        [
+          0.005,
+          0.005
+        ]
+      ],
       "pre_image": "/data/site_002/pre.png",
       "post_image": "/data/site_002/post.png",
       "damage_geojson": "/data/site_002/damage.geojson",
       "summary": {
-        "total_structures": 5,
+        "total_structures": 33,
+        "no_damage": 0,
+        "minor_damage": 25,
+        "major_damage": 0,
+        "destroyed": 8
+      }
+    },
+    {
+      "id": "site_003",
+      "name": "Train/Images/Midwest Flooding",
+      "source": "xbd_test",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.005,
+          -0.005
+        ],
+        [
+          0.005,
+          0.005
+        ]
+      ],
+      "pre_image": "/data/site_003/pre.png",
+      "post_image": "/data/site_003/post.png",
+      "damage_geojson": "/data/site_003/damage.geojson",
+      "summary": {
+        "total_structures": 4,
+        "no_damage": 4,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_004",
+      "name": "Train/Images/Hurricane Harvey",
+      "source": "xbd_test",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.005,
+          -0.005
+        ],
+        [
+          0.005,
+          0.005
+        ]
+      ],
+      "pre_image": "/data/site_004/pre.png",
+      "post_image": "/data/site_004/post.png",
+      "damage_geojson": "/data/site_004/damage.geojson",
+      "summary": {
+        "total_structures": 3,
         "no_damage": 2,
-        "minor_damage": 1,
-        "major_damage": 1,
+        "minor_damage": 0,
+        "major_damage": 0,
         "destroyed": 1
+      }
+    },
+    {
+      "id": "site_005",
+      "name": "Jajarkot Earthquake, Nepal",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 28.87,
+        "lng": 82.2
+      },
+      "bounds": [
+        [
+          28.830000000000002,
+          82.16
+        ],
+        [
+          28.91,
+          82.24000000000001
+        ]
+      ],
+      "pre_image": "/data/site_005/pre.png",
+      "post_image": "/data/site_005/post.png",
+      "damage_geojson": "/data/site_005/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_006",
+      "name": "Nepal Floods 2024",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.7,
+        "lng": 85.3
+      },
+      "bounds": [
+        [
+          27.68,
+          85.28
+        ],
+        [
+          27.72,
+          85.32
+        ]
+      ],
+      "pre_image": "/data/site_006/pre.png",
+      "post_image": "/data/site_006/post.png",
+      "damage_geojson": "/data/site_006/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_007",
+      "name": "Sikkim GLOF Floods, India",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.9,
+        "lng": 88.15
+      },
+      "bounds": [
+        [
+          27.869999999999997,
+          88.12
+        ],
+        [
+          27.93,
+          88.18
+        ]
+      ],
+      "pre_image": "/data/site_007/pre.png",
+      "post_image": "/data/site_007/post.png",
+      "damage_geojson": "/data/site_007/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
       }
     }
   ]
