@@ -32,9 +32,14 @@ body {
   color: var(--text-primary);
 }
 
-/* Leaflet overrides for dark theme */
+/* Leaflet overrides for dark theme and strict containment */
 .leaflet-container {
   background: var(--bg-primary) !important;
+  touch-action: none !important;
+  overflow: hidden !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .leaflet-control-zoom a {

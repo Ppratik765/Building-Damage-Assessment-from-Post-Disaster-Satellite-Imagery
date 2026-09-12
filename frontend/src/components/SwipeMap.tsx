@@ -15,72 +15,121 @@ import { DAMAGE_COLORS, DAMAGE_LABELS } from "@/lib/types";
 
 interface SwipeMapProps {
   site: Site;
+  profile?: string;
 }
 
-/** Component to fit map bounds to the site on mount */
-function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression }) {
+/** Component to fit map bounds to the site on mount and expose map ref */
+function MapBridge({
+  bounds,
+  onMapReady,
+}: {
+  bounds: L.LatLngBoundsExpression;
+  onMapReady: (map: L.Map) => void;
+}) {
   const map = useMap();
   useEffect(() => {
+    if (!map.getPane("damagePane")) {
+      const pane = map.createPane("damagePane");
+      pane.style.zIndex = "450";
+    }
+    onMapReady(map);
     map.fitBounds(bounds, { padding: [20, 20] });
-  }, [map, bounds]);
+  }, [map, bounds, onMapReady]);
   return null;
 }
 
 /**
- * Applies the clip-path to the post-image overlay and reports the overlay's
- * on-screen bounding rect back up to the parent. The rect is needed there
- * because `fitBounds` typically letterboxes the (near-square) satellite
- * tile inside a much wider map container -- the swipe handle has to be
- * positioned against the image's own box, not the container's, or the
- * handle and the actual pre/post split visually diverge.
+ * Clips the post-disaster image overlay and damage GeoJSON SVG
+ * based on the screen-space position of the slider handle.
+ * This ensures the slider stays firmly accessible in the container
+ * while allowing full pan and zoom around the satellite imagery.
  */
 function SwipeController({
   fraction,
   postOverlayRef,
-  onOverlayRectChange,
+  containerRef,
 }: {
   fraction: number;
   postOverlayRef: React.RefObject<L.ImageOverlay | null>;
-  onOverlayRectChange: (rect: DOMRect | null) => void;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const applyClip = useCallback(() => {
-    const el = postOverlayRef.current?.getElement();
-    if (!el) {
-      onOverlayRectChange(null);
-      return;
-    }
-    // clip-path: inset(top right bottom left) -- percentages here are
-    // relative to the element's OWN box, so this is correct as long as
-    // `fraction` is also measured against the same box (see SwipeMap).
-    el.style.clipPath = `inset(0 0 0 ${fraction * 100}%)`;
-    onOverlayRectChange(el.getBoundingClientRect());
-  }, [fraction, postOverlayRef, onOverlayRectChange]);
+    if (!containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    if (containerRect.width === 0) return;
 
+    // Screen-space X of the vertical divider line
+    const sliderX = containerRect.left + fraction * containerRect.width;
+
+    // Clip the post-disaster ImageOverlay
+    const postEl = postOverlayRef.current?.getElement();
+    if (postEl) {
+      const imgRect = postEl.getBoundingClientRect();
+      if (imgRect.width > 0) {
+        const clipX = Math.max(
+          0,
+          Math.min(imgRect.width, sliderX - imgRect.left)
+        );
+        postEl.style.clipPath = `inset(0 0 0 ${clipX}px)`;
+      }
+    }
+
+    // Clip the Damage GeoJSON SVG if present
+    const svgEl = containerRef.current.querySelector(
+      ".leaflet-damagePane-pane svg, .leaflet-overlay-pane svg"
+    ) as SVGElement | null;
+    if (svgEl) {
+      const svgRect = svgEl.getBoundingClientRect();
+      if (svgRect.width > 0) {
+        const clipX = Math.max(
+          0,
+          Math.min(svgRect.width, sliderX - svgRect.left)
+        );
+        svgEl.style.clipPath = `inset(0 0 0 ${clipX}px)`;
+      }
+    }
+  }, [fraction, containerRef, postOverlayRef]);
+
+  // Apply immediately when fraction changes
   useEffect(() => {
     applyClip();
   }, [applyClip]);
 
-  // Re-sync on pan/zoom/resize -- the overlay's on-screen rect (and so the
-  // handle's aligned position) changes then too, even though `fraction`
-  // itself hasn't.
+  // Listen to all map movements, zooms, and resizes
   useMapEvents({
     move: applyClip,
     zoom: applyClip,
     resize: applyClip,
+    viewreset: applyClip,
   });
+
+  // Ensure clip applies when the overlay image finishes loading
+  useEffect(() => {
+    const postEl = postOverlayRef.current?.getElement();
+    if (postEl) {
+      postEl.addEventListener("load", applyClip);
+      applyClip();
+      return () => postEl.removeEventListener("load", applyClip);
+    }
+    const interval = setInterval(applyClip, 100);
+    const timeout = setTimeout(() => clearInterval(interval), 1500);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [applyClip, postOverlayRef]);
 
   return null;
 }
 
 export default function SwipeMap({ site }: SwipeMapProps) {
-  // `fraction` (0-1) is the swipe position measured along the POST-IMAGE's
-  // own width -- this is what actually feeds the clip-path, so it's the
-  // single source of truth both the handle and the clip stay in sync with.
   const [fraction, setFraction] = useState(0.5);
-  const [overlayRect, setOverlayRect] = useState<DOMRect | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [damageData, setDamageData] = useState<DamageGeoJSON | null>(null);
   const [showDamage, setShowDamage] = useState(true);
+  const [showLegend, setShowLegend] = useState(true);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const postOverlayRef = useRef<L.ImageOverlay | null>(null);
 
@@ -91,26 +140,22 @@ export default function SwipeMap({ site }: SwipeMapProps) {
 
   // Load damage GeoJSON
   useEffect(() => {
+    if (!site.damage_geojson) return;
     fetch(site.damage_geojson)
       .then((r) => r.json())
       .then((data: DamageGeoJSON) => setDamageData(data))
       .catch((err) => console.error("Failed to load damage data:", err));
   }, [site.damage_geojson]);
 
-  // Swipe handlers -- measured against the overlay image's own bounding
-  // rect (falling back to the last-known rect if a drag event fires
-  // between renders), not the outer container.
-  const handleSwipeMove = useCallback(
-    (clientX: number) => {
-      const el = postOverlayRef.current?.getElement();
-      const rect = el ? el.getBoundingClientRect() : overlayRect;
-      if (!rect || rect.width === 0) return;
-      const x = clientX - rect.left;
-      const frac = Math.max(0, Math.min(1, x / rect.width));
-      setFraction(frac);
-    },
-    [overlayRect]
-  );
+  // Swipe handlers measured against container bounds
+  const handleSwipeMove = useCallback((clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const x = clientX - rect.left;
+    const frac = Math.max(0.01, Math.min(0.99, x / rect.width));
+    setFraction(frac);
+  }, []);
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -125,6 +170,7 @@ export default function SwipeMap({ site }: SwipeMapProps) {
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
       if (isDragging && e.touches.length > 0) {
+        if (e.cancelable) e.preventDefault();
         handleSwipeMove(e.touches[0].clientX);
       }
     },
@@ -141,80 +187,85 @@ export default function SwipeMap({ site }: SwipeMapProps) {
       window.addEventListener("mouseup", stopDragging);
       window.addEventListener("touchmove", handleTouchMove, { passive: false });
       window.addEventListener("touchend", stopDragging);
+      window.addEventListener("touchcancel", stopDragging);
     }
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", stopDragging);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", stopDragging);
+      window.removeEventListener("touchcancel", stopDragging);
     };
   }, [isDragging, handleMouseMove, handleTouchMove, stopDragging]);
 
-  // Handle's on-screen `left`, in px relative to the container -- derived
-  // from the overlay's own rect so the divider visually lines up with
-  // where the image actually splits, instead of assuming the image spans
-  // the full container width.
-  let handleLeftPx: number | null = null;
-  if (overlayRect && containerRef.current) {
-    const containerRect = containerRef.current.getBoundingClientRect();
-    handleLeftPx =
-      overlayRect.left - containerRect.left + fraction * overlayRect.width;
-  }
+  // Map action buttons
+  const handleZoomIn = () => mapInstance?.zoomIn();
+  const handleZoomOut = () => mapInstance?.zoomOut();
+  const handleResetBounds = () => {
+    mapInstance?.fitBounds(bounds, { padding: [16, 16], maxZoom: 18 });
+  };
 
-  // GeoJSON styling
+  // GeoJSON polygon styling
   const geoJsonStyle = (feature: GeoJSON.Feature | undefined) => {
-    const tier = feature?.properties?.damage_tier as DamageTier;
+    const tier = (feature?.properties?.damage_tier as DamageTier) || "no-damage";
     const color = DAMAGE_COLORS[tier] || "#888";
     return {
       color,
       weight: 2,
-      opacity: 0.9,
+      opacity: 0.95,
       fillColor: color,
-      fillOpacity: 0.35,
+      fillOpacity: 0.45,
     };
   };
 
   const onEachFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
     const props = feature.properties;
     if (!props) return;
-    const tier = props.damage_tier as DamageTier;
+    const tier = (props.damage_tier as DamageTier) || "no-damage";
     const color = DAMAGE_COLORS[tier] || "#888";
     const label = DAMAGE_LABELS[tier] || tier;
-    const confidence = (props.confidence * 100).toFixed(1);
+    const confidence = props.confidence ? (props.confidence * 100).toFixed(1) : "—";
 
     layer.bindPopup(`
-      <div style="font-family: var(--font-fira-code), monospace; min-width: 160px;">
+      <div style="font-family: var(--font-fira-code), monospace; min-width: 170px; padding: 4px 2px;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
           <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};
-                      box-shadow: 0 0 8px ${color}80;"></div>
-          <strong style="font-size: 13px;">${label}</strong>
+                      box-shadow: 0 0 10px ${color};"></div>
+          <strong style="font-size: 13px; color: #f8fafc;">${label}</strong>
         </div>
-        <div style="font-size: 11px; color: #94a3b8;">
-          Building #${props.building_id}<br/>
-          Confidence: <span style="color: ${color};">${confidence}%</span>
+        <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
+          Building ID: <span style="color: #cbd5e1;">#${props.building_id ?? "—"}</span><br/>
+          Confidence: <span style="color: ${color}; font-weight: 600;">${confidence}%</span>
         </div>
       </div>
     `);
   };
 
   return (
-    <div className="relative w-full" ref={containerRef}>
-      {/* Map */}
-      <div className="w-full h-[500px] md:h-[600px] lg:h-[700px] rounded-xl overflow-hidden border border-slate-700/50">
+    <div
+      ref={containerRef}
+      className="relative w-full rounded-2xl select-none overflow-hidden glass-card border border-slate-700/60 shadow-2xl"
+    >
+      {/* Map Viewport Container - Fixed responsive height, strictly contained */}
+      <div className="w-full relative h-[440px] sm:h-[520px] md:h-[600px] lg:h-[660px] overflow-hidden rounded-2xl bg-slate-950">
         <MapContainer
           center={[site.center.lat, site.center.lng]}
           zoom={16}
+          minZoom={12}
+          maxZoom={22}
           style={{ width: "100%", height: "100%" }}
-          zoomControl={true}
-          dragging={!isDragging}
+          zoomControl={false}
           scrollWheelZoom={!isDragging}
+          doubleClickZoom={!isDragging}
+          touchZoom={!isDragging}
+          dragging={!isDragging}
         >
-          <FitBounds bounds={bounds} />
+          <MapBridge bounds={bounds} onMapReady={setMapInstance} />
 
-          {/* Pre-disaster (bottom layer) */}
+          {/* Pre-disaster imagery layer */}
           <ImageOverlay url={site.pre_image} bounds={bounds} zIndex={1} />
 
-          {/* Post-disaster (top layer, clipped) */}
+          {/* Post-disaster clipped imagery layer */}
           <ImageOverlay
             url={site.post_image}
             bounds={bounds}
@@ -225,37 +276,84 @@ export default function SwipeMap({ site }: SwipeMapProps) {
           <SwipeController
             fraction={fraction}
             postOverlayRef={postOverlayRef}
-            onOverlayRectChange={setOverlayRect}
+            containerRef={containerRef}
           />
 
-          {/* Damage overlay */}
+          {/* Damage polygon overlays */}
           {showDamage && damageData && (
             <GeoJSON
-              key={`damage-${site.id}`}
+              key={`damage-${site.id}-${damageData.features.length}`}
               data={damageData}
               style={geoJsonStyle}
               onEachFeature={onEachFeature}
+              pane="damagePane"
             />
           )}
         </MapContainer>
-      </div>
 
-      {/* Swipe divider -- only rendered once we know where the image
-          actually is, so it never flashes at a wrong position on load */}
-      {handleLeftPx !== null && (
-        <div
-          className="swipe-handle absolute top-0 bottom-0 z-[1000]"
-          style={{ left: `${handleLeftPx}px`, transform: "translateX(-50%)" }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onTouchStart={() => setIsDragging(true)}
-        >
-          <div className="swipe-line absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-white/80 transition-all" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/90 border-2 border-white/80 flex items-center justify-center backdrop-blur-sm">
+        {/* Top Badges (Pre vs Post) */}
+        <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none z-[800]">
+          <div className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-slate-900/90 border border-cyan-500/40 text-cyan-300 backdrop-blur-md shadow-lg pointer-events-auto">
+            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>Pre-Disaster</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-slate-900/90 border border-orange-500/40 text-orange-300 backdrop-blur-md shadow-lg pointer-events-auto">
+            <span>Post-Disaster</span>
+            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-orange-400 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Floating Interactive Map Controls (Zoom In, Zoom Out, Recenter) */}
+        <div className="absolute top-14 right-3 z-[850] flex flex-col gap-2 pointer-events-auto">
+          <button
+            onClick={handleZoomIn}
+            title="Zoom In"
+            aria-label="Zoom in"
+            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
+          >
             <svg
-              className="w-5 h-5 text-white"
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            aria-label="Zoom out"
+            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M20 12H4"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={handleResetBounds}
+            title="Reset to Full Scene"
+            aria-label="Reset to full scene"
+            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
+          >
+            <svg
+              className="w-4 h-4 text-cyan-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -264,81 +362,102 @@ export default function SwipeMap({ site }: SwipeMapProps) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                d="M12 2v4m0 12v4M2 12h4m12 0h4m-7-7l4-4m-4 18l4 4M7 7L3 3m4 14l-4 4"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Draggable Swipe Divider Handle (Anchored to container percentage) */}
+        <div
+          className="swipe-handle absolute top-0 bottom-0 z-[900] w-12 -ml-6 cursor-col-resize select-none pointer-events-auto touch-none"
+          style={{ left: `${fraction * 100}%` }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            setIsDragging(true);
+          }}
+        >
+          {/* Visual thin line */}
+          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-cyan-400 via-white to-orange-400 shadow-[0_0_14px_rgba(255,255,255,0.9)]" />
+
+          {/* Floating circular knob */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/95 border-2 border-white shadow-2xl flex items-center justify-center backdrop-blur-md transition-transform active:scale-110">
+            <svg
+              className="w-5 h-5 text-cyan-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M8 9l-4 3 4 3m8-6l4 3-4 3"
               />
             </svg>
           </div>
         </div>
-      )}
 
-      {/* Labels */}
-      <div
-        className="absolute top-4 left-4 z-[900] px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase"
-        style={{
-          background: "rgba(15, 23, 42, 0.85)",
-          border: "1px solid rgba(34, 211, 238, 0.3)",
-          color: "#22d3ee",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        Pre-Disaster
-      </div>
-      <div
-        className="absolute top-4 right-4 z-[900] px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase"
-        style={{
-          background: "rgba(15, 23, 42, 0.85)",
-          border: "1px solid rgba(249, 115, 22, 0.3)",
-          color: "#f97316",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        Post-Disaster
-      </div>
-
-      {/* Damage toggle */}
-      <button
-        onClick={() => setShowDamage(!showDamage)}
-        className="absolute bottom-4 right-4 z-[900] px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-        style={{
-          background: showDamage
-            ? "rgba(34, 211, 238, 0.15)"
-            : "rgba(15, 23, 42, 0.85)",
-          border: `1px solid ${
-            showDamage ? "rgba(34, 211, 238, 0.4)" : "rgba(148, 163, 184, 0.2)"
-          }`,
-          color: showDamage ? "#22d3ee" : "#94a3b8",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        {showDamage ? "🛡️ Damage On" : "🛡️ Damage Off"}
-      </button>
-
-      {/* Legend */}
-      {showDamage && (
-        <div
-          className="absolute bottom-4 left-4 z-[900] p-3 rounded-lg text-xs space-y-1.5"
-          style={{
-            background: "rgba(15, 23, 42, 0.9)",
-            border: "1px solid rgba(148, 163, 184, 0.15)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          {(Object.entries(DAMAGE_COLORS) as [DamageTier, string][]).map(
-            ([tier, color]) => (
-              <div key={tier} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-sm"
-                  style={{
-                    backgroundColor: color,
-                    boxShadow: `0 0 6px ${color}40`,
-                  }}
-                />
-                <span className="text-slate-300">{DAMAGE_LABELS[tier]}</span>
+        {/* Bottom Control Bar: Damage Toggle & Legend Drawer */}
+        <div className="absolute bottom-3 inset-x-3 flex items-end justify-between gap-2 pointer-events-none z-[850]">
+          {/* Left: Collapsible Legend Drawer */}
+          <div className="pointer-events-auto flex flex-col items-start gap-1">
+            {showDamage && showLegend && (
+              <div className="p-2.5 sm:p-3 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md text-[11px] sm:text-xs space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="font-semibold text-slate-400 uppercase tracking-wider text-[10px] mb-1">
+                  Damage Legend
+                </div>
+                {(Object.entries(DAMAGE_COLORS) as [DamageTier, string][]).map(
+                  ([tier, color]) => (
+                    <div key={tier} className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-sm shadow-sm"
+                        style={{
+                          backgroundColor: color,
+                          boxShadow: `0 0 6px ${color}60`,
+                        }}
+                      />
+                      <span className="text-slate-300 font-medium">
+                        {DAMAGE_LABELS[tier]}
+                      </span>
+                    </div>
+                  )
+                )}
               </div>
-            )
-          )}
+            )}
+
+            {showDamage && (
+              <button
+                onClick={() => setShowLegend(!showLegend)}
+                className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-400 border border-slate-700/60 backdrop-blur-md shadow-md"
+              >
+                {showLegend ? "Hide Legend" : "Show Legend"}
+              </button>
+            )}
+          </div>
+
+          {/* Right: Damage Toggle Button */}
+          <button
+            onClick={() => setShowDamage(!showDamage)}
+            className={`pointer-events-auto px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-xl backdrop-blur-md flex items-center gap-2 border ${
+              showDamage
+                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-cyan-500/20"
+                : "bg-slate-900/90 text-slate-400 border-slate-700/80 hover:text-slate-200"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                showDamage ? "bg-cyan-400 animate-pulse" : "bg-slate-500"
+              }`}
+            />
+            <span>{showDamage ? "Damage Layer ON" : "Damage Layer OFF"}</span>
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
