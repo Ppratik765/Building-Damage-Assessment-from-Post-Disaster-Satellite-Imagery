@@ -39,18 +39,18 @@ function StatCard({ label, value, color, delay }: StatCardProps) {
   }, [value, delay]);
 
   return (
-    <div className="glass-card p-4 md:p-5 flex flex-col items-center gap-2 min-w-[120px]">
+    <div className="glass-card p-3.5 sm:p-4 md:p-5 flex flex-col items-center gap-1.5 sm:gap-2 h-full justify-center">
       <div
-        className="w-3 h-3 rounded-full"
+        className="w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full"
         style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}50` }}
       />
       <span
-        className="font-mono text-2xl md:text-3xl font-bold stat-number"
+        className="font-mono text-2xl sm:text-2xl md:text-3xl font-bold stat-number"
         style={{ color }}
       >
         {displayed}
       </span>
-      <span className="text-xs md:text-sm text-slate-400 text-center whitespace-nowrap">
+      <span className="text-[11px] sm:text-xs md:text-sm text-slate-400 text-center">
         {label}
       </span>
     </div>
@@ -87,15 +87,19 @@ export default function StatCards({ summary }: StatCardsProps) {
   ];
 
   return (
-    <div className="flex flex-wrap justify-center gap-3 md:gap-4 w-full">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 md:gap-4 w-full">
       {cards.map((card, i) => (
-        <StatCard
+        <div
           key={card.label}
-          label={card.label}
-          value={card.value}
-          color={card.color}
-          delay={i * 100}
-        />
+          className={i === 0 ? "col-span-2 sm:col-span-1" : "col-span-1"}
+        >
+          <StatCard
+            label={card.label}
+            value={card.value}
+            color={card.color}
+            delay={i * 80}
+          />
+        </div>
       ))}
     </div>
   );
