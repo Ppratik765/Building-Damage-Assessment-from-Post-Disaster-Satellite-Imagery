@@ -117,26 +117,26 @@
       }
     },
     {
-      "id": "site_005",
-      "name": "Jajarkot Earthquake, Nepal",
+      "id": "site_008",
+      "name": "Jajarkot Earthquake, Nepal (Area 1)",
       "source": "maxar_ood",
       "center": {
-        "lat": 28.87,
-        "lng": 82.2
+        "lat": 28.8842,
+        "lng": 82.159
       },
       "bounds": [
         [
-          28.830000000000002,
-          82.16
+          28.8642,
+          82.13900000000001
         ],
         [
-          28.91,
-          82.24000000000001
+          28.9042,
+          82.179
         ]
       ],
-      "pre_image": "/data/site_005/pre.png",
-      "post_image": "/data/site_005/post.png",
-      "damage_geojson": "/data/site_005/damage.geojson",
+      "pre_image": "/data/site_008/pre.png",
+      "post_image": "/data/site_008/post.png",
+      "damage_geojson": "/data/site_008/damage.geojson",
       "summary": {
         "total_structures": 0,
         "no_damage": 0,
@@ -146,26 +146,26 @@
       }
     },
     {
-      "id": "site_006",
-      "name": "Nepal Floods 2024",
+      "id": "site_009",
+      "name": "Jajarkot Earthquake, Nepal (Area 2)",
       "source": "maxar_ood",
       "center": {
-        "lat": 27.7,
-        "lng": 85.3
+        "lat": 28.8839,
+        "lng": 82.2051
       },
       "bounds": [
         [
-          27.68,
-          85.28
+          28.8639,
+          82.1851
         ],
         [
-          27.72,
-          85.32
+          28.9039,
+          82.2251
         ]
       ],
-      "pre_image": "/data/site_006/pre.png",
-      "post_image": "/data/site_006/post.png",
-      "damage_geojson": "/data/site_006/damage.geojson",
+      "pre_image": "/data/site_009/pre.png",
+      "post_image": "/data/site_009/post.png",
+      "damage_geojson": "/data/site_009/damage.geojson",
       "summary": {
         "total_structures": 0,
         "no_damage": 0,
@@ -175,32 +175,293 @@
       }
     },
     {
-      "id": "site_007",
-      "name": "Sikkim GLOF Floods, India",
+      "id": "site_010",
+      "name": "Jajarkot Earthquake, Nepal (Area 3)",
       "source": "maxar_ood",
       "center": {
-        "lat": 27.9,
-        "lng": 88.15
+        "lat": 28.8181,
+        "lng": 82.1589
       },
       "bounds": [
         [
-          27.869999999999997,
-          88.12
+          28.7981,
+          82.1389
         ],
         [
-          27.93,
-          88.18
+          28.8381,
+          82.1789
         ]
       ],
-      "pre_image": "/data/site_007/pre.png",
-      "post_image": "/data/site_007/post.png",
-      "damage_geojson": "/data/site_007/damage.geojson",
+      "pre_image": "/data/site_010/pre.png",
+      "post_image": "/data/site_010/post.png",
+      "damage_geojson": "/data/site_010/damage.geojson",
+      "summary": {
+        "total_structures": 1,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 1
+      }
+    },
+    {
+      "id": "site_011",
+      "name": "Jajarkot Earthquake, Nepal (Area 4)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 28.8179,
+        "lng": 82.2041
+      },
+      "bounds": [
+        [
+          28.797900000000002,
+          82.1841
+        ],
+        [
+          28.8379,
+          82.22409999999999
+        ]
+      ],
+      "pre_image": "/data/site_011/pre.png",
+      "post_image": "/data/site_011/post.png",
+      "damage_geojson": "/data/site_011/damage.geojson",
       "summary": {
         "total_structures": 0,
         "no_damage": 0,
         "minor_damage": 0,
         "major_damage": 0,
         "destroyed": 0
+      }
+    },
+    {
+      "id": "site_012",
+      "name": "Nepal Floods 2024 (Area 1)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.7645,
+        "lng": 85.4089
+      },
+      "bounds": [
+        [
+          27.7495,
+          85.3939
+        ],
+        [
+          27.779500000000002,
+          85.4239
+        ]
+      ],
+      "pre_image": "/data/site_012/pre.png",
+      "post_image": "/data/site_012/post.png",
+      "damage_geojson": "/data/site_012/damage.geojson",
+      "summary": {
+        "total_structures": 33,
+        "no_damage": 31,
+        "minor_damage": 2,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_013",
+      "name": "Nepal Floods 2024 (Area 2)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.7649,
+        "lng": 85.4524
+      },
+      "bounds": [
+        [
+          27.7499,
+          85.4374
+        ],
+        [
+          27.7799,
+          85.4674
+        ]
+      ],
+      "pre_image": "/data/site_013/pre.png",
+      "post_image": "/data/site_013/post.png",
+      "damage_geojson": "/data/site_013/damage.geojson",
+      "summary": {
+        "total_structures": 21,
+        "no_damage": 19,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 2
+      }
+    },
+    {
+      "id": "site_014",
+      "name": "Nepal Floods 2024 (Area 3)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.7226,
+        "lng": 85.409
+      },
+      "bounds": [
+        [
+          27.7076,
+          85.394
+        ],
+        [
+          27.7376,
+          85.424
+        ]
+      ],
+      "pre_image": "/data/site_014/pre.png",
+      "post_image": "/data/site_014/post.png",
+      "damage_geojson": "/data/site_014/damage.geojson",
+      "summary": {
+        "total_structures": 20,
+        "no_damage": 12,
+        "minor_damage": 1,
+        "major_damage": 0,
+        "destroyed": 7
+      }
+    },
+    {
+      "id": "site_015",
+      "name": "Nepal Floods 2024 (Area 4)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.7232,
+        "lng": 85.453
+      },
+      "bounds": [
+        [
+          27.708199999999998,
+          85.438
+        ],
+        [
+          27.7382,
+          85.468
+        ]
+      ],
+      "pre_image": "/data/site_015/pre.png",
+      "post_image": "/data/site_015/post.png",
+      "damage_geojson": "/data/site_015/damage.geojson",
+      "summary": {
+        "total_structures": 125,
+        "no_damage": 98,
+        "minor_damage": 2,
+        "major_damage": 2,
+        "destroyed": 23
+      }
+    },
+    {
+      "id": "site_016",
+      "name": "Sikkim GLOF Floods, India (Area 1)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.9368,
+        "lng": 88.1104
+      },
+      "bounds": [
+        [
+          27.916800000000002,
+          88.0904
+        ],
+        [
+          27.9568,
+          88.1304
+        ]
+      ],
+      "pre_image": "/data/site_016/pre.png",
+      "post_image": "/data/site_016/post.png",
+      "damage_geojson": "/data/site_016/damage.geojson",
+      "summary": {
+        "total_structures": 6,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 6
+      }
+    },
+    {
+      "id": "site_017",
+      "name": "Sikkim GLOF Floods, India (Area 2)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.9367,
+        "lng": 88.1816
+      },
+      "bounds": [
+        [
+          27.9167,
+          88.1616
+        ],
+        [
+          27.956699999999998,
+          88.2016
+        ]
+      ],
+      "pre_image": "/data/site_017/pre.png",
+      "post_image": "/data/site_017/post.png",
+      "damage_geojson": "/data/site_017/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_018",
+      "name": "Sikkim GLOF Floods, India (Area 3)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.871,
+        "lng": 88.1113
+      },
+      "bounds": [
+        [
+          27.851,
+          88.0913
+        ],
+        [
+          27.891,
+          88.1313
+        ]
+      ],
+      "pre_image": "/data/site_018/pre.png",
+      "post_image": "/data/site_018/post.png",
+      "damage_geojson": "/data/site_018/damage.geojson",
+      "summary": {
+        "total_structures": 31,
+        "no_damage": 3,
+        "minor_damage": 0,
+        "major_damage": 13,
+        "destroyed": 15
+      }
+    },
+    {
+      "id": "site_019",
+      "name": "Sikkim GLOF Floods, India (Area 4)",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 27.9077,
+        "lng": 88.1432
+      },
+      "bounds": [
+        [
+          27.8877,
+          88.1232
+        ],
+        [
+          27.927699999999998,
+          88.16319999999999
+        ]
+      ],
+      "pre_image": "/data/site_019/pre.png",
+      "post_image": "/data/site_019/post.png",
+      "damage_geojson": "/data/site_019/damage.geojson",
+      "summary": {
+        "total_structures": 13,
+        "no_damage": 2,
+        "minor_damage": 0,
+        "major_damage": 1,
+        "destroyed": 10
       }
     }
   ]
