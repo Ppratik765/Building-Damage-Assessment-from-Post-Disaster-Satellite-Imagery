@@ -1,0 +1,764 @@
+{
+  "sites": [
+    {
+      "id": "site_001",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 1203",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_001",
+      "building_count": 0,
+      "site_id": "site_001",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 1203",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 1.0,
+      "pre_image": "/data1/site_001/pre.png",
+      "post_image": "/data1/site_001/post.png",
+      "damage_geojson": "/data1/site_001/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_002",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 1221",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_002",
+      "building_count": 1,
+      "site_id": "site_002",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 1221",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 1.0,
+      "pre_image": "/data1/site_002/pre.png",
+      "post_image": "/data1/site_002/post.png",
+      "damage_geojson": "/data1/site_002/damage.geojson",
+      "summary": {
+        "total_structures": 1,
+        "no_damage": 1,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_003",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0330",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_003",
+      "building_count": 0,
+      "site_id": "site_003",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0330",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 1.0,
+      "pre_image": "/data1/site_003/pre.png",
+      "post_image": "/data1/site_003/post.png",
+      "damage_geojson": "/data1/site_003/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_004",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0331",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_004",
+      "building_count": 6,
+      "site_id": "site_004",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0331",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9724,
+      "pre_image": "/data1/site_004/pre.png",
+      "post_image": "/data1/site_004/post.png",
+      "damage_geojson": "/data1/site_004/damage.geojson",
+      "summary": {
+        "total_structures": 6,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 6
+      }
+    },
+    {
+      "id": "site_005",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0332",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_005",
+      "building_count": 0,
+      "site_id": "site_005",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0332",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 1.0,
+      "pre_image": "/data1/site_005/pre.png",
+      "post_image": "/data1/site_005/post.png",
+      "damage_geojson": "/data1/site_005/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_006",
+      "name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0333",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_006",
+      "building_count": 6,
+      "site_id": "site_006",
+      "location_name": "Sikkim Flash Floods, India (Teesta Basin) Sector 0333",
+      "disaster_name": "Sikkim Flash Floods, India (Teesta Basin)",
+      "disaster_type": "flooding",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9998,
+      "pre_image": "/data1/site_006/pre.png",
+      "post_image": "/data1/site_006/post.png",
+      "damage_geojson": "/data1/site_006/damage.geojson",
+      "summary": {
+        "total_structures": 6,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 2,
+        "destroyed": 4
+      }
+    },
+    {
+      "id": "site_007",
+      "name": "Jajarkot Earthquake, Nepal Sector 0113",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_007",
+      "building_count": 0,
+      "site_id": "site_007",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 0113",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.8384,
+      "pre_image": "/data1/site_007/pre.png",
+      "post_image": "/data1/site_007/post.png",
+      "damage_geojson": "/data1/site_007/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_008",
+      "name": "Jajarkot Earthquake, Nepal Sector 0131",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_008",
+      "building_count": 0,
+      "site_id": "site_008",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 0131",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9258,
+      "pre_image": "/data1/site_008/pre.png",
+      "post_image": "/data1/site_008/post.png",
+      "damage_geojson": "/data1/site_008/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_009",
+      "name": "Jajarkot Earthquake, Nepal Sector 1003",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_009",
+      "building_count": 0,
+      "site_id": "site_009",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1003",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9996,
+      "pre_image": "/data1/site_009/pre.png",
+      "post_image": "/data1/site_009/post.png",
+      "damage_geojson": "/data1/site_009/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_010",
+      "name": "Jajarkot Earthquake, Nepal Sector 1013",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_010",
+      "building_count": 10,
+      "site_id": "site_010",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1013",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9976,
+      "pre_image": "/data1/site_010/pre.png",
+      "post_image": "/data1/site_010/post.png",
+      "damage_geojson": "/data1/site_010/damage.geojson",
+      "summary": {
+        "total_structures": 10,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 10
+      }
+    },
+    {
+      "id": "site_011",
+      "name": "Jajarkot Earthquake, Nepal Sector 1102",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_011",
+      "building_count": 0,
+      "site_id": "site_011",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1102",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.8984,
+      "pre_image": "/data1/site_011/pre.png",
+      "post_image": "/data1/site_011/post.png",
+      "damage_geojson": "/data1/site_011/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_012",
+      "name": "Jajarkot Earthquake, Nepal Sector 1021",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_012",
+      "building_count": 2,
+      "site_id": "site_012",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1021",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9981,
+      "pre_image": "/data1/site_012/pre.png",
+      "post_image": "/data1/site_012/post.png",
+      "damage_geojson": "/data1/site_012/damage.geojson",
+      "summary": {
+        "total_structures": 2,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 2
+      }
+    },
+    {
+      "id": "site_013",
+      "name": "Jajarkot Earthquake, Nepal Sector 1022",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_013",
+      "building_count": 1,
+      "site_id": "site_013",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1022",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9985,
+      "pre_image": "/data1/site_013/pre.png",
+      "post_image": "/data1/site_013/post.png",
+      "damage_geojson": "/data1/site_013/damage.geojson",
+      "summary": {
+        "total_structures": 1,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 1
+      }
+    },
+    {
+      "id": "site_014",
+      "name": "Jajarkot Earthquake, Nepal Sector 1023",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_014",
+      "building_count": 2,
+      "site_id": "site_014",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1023",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.988,
+      "pre_image": "/data1/site_014/pre.png",
+      "post_image": "/data1/site_014/post.png",
+      "damage_geojson": "/data1/site_014/damage.geojson",
+      "summary": {
+        "total_structures": 2,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 2
+      }
+    },
+    {
+      "id": "site_015",
+      "name": "Jajarkot Earthquake, Nepal Sector 1030",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_015",
+      "building_count": 0,
+      "site_id": "site_015",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1030",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.989,
+      "pre_image": "/data1/site_015/pre.png",
+      "post_image": "/data1/site_015/post.png",
+      "damage_geojson": "/data1/site_015/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_016",
+      "name": "Jajarkot Earthquake, Nepal Sector 1032",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_016",
+      "building_count": 0,
+      "site_id": "site_016",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1032",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9967,
+      "pre_image": "/data1/site_016/pre.png",
+      "post_image": "/data1/site_016/post.png",
+      "damage_geojson": "/data1/site_016/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_017",
+      "name": "Jajarkot Earthquake, Nepal Sector 1033",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_017",
+      "building_count": 3,
+      "site_id": "site_017",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1033",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9989,
+      "pre_image": "/data1/site_017/pre.png",
+      "post_image": "/data1/site_017/post.png",
+      "damage_geojson": "/data1/site_017/damage.geojson",
+      "summary": {
+        "total_structures": 3,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 1,
+        "destroyed": 2
+      }
+    },
+    {
+      "id": "site_018",
+      "name": "Jajarkot Earthquake, Nepal Sector 1120",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_018",
+      "building_count": 0,
+      "site_id": "site_018",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1120",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9528,
+      "pre_image": "/data1/site_018/pre.png",
+      "post_image": "/data1/site_018/post.png",
+      "damage_geojson": "/data1/site_018/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_019",
+      "name": "Jajarkot Earthquake, Nepal Sector 1200",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_019",
+      "building_count": 0,
+      "site_id": "site_019",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1200",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9997,
+      "pre_image": "/data1/site_019/pre.png",
+      "post_image": "/data1/site_019/post.png",
+      "damage_geojson": "/data1/site_019/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    },
+    {
+      "id": "site_020",
+      "name": "Jajarkot Earthquake, Nepal Sector 1201",
+      "source": "maxar_ood",
+      "center": {
+        "lat": 0.0,
+        "lng": 0.0
+      },
+      "bounds": [
+        [
+          -0.05,
+          -0.05
+        ],
+        [
+          0.05,
+          0.05
+        ]
+      ],
+      "path": "/teamspace/studios/this_studio/demo_sites/site_020",
+      "building_count": 0,
+      "site_id": "site_020",
+      "location_name": "Jajarkot Earthquake, Nepal Sector 1201",
+      "disaster_name": "Jajarkot Earthquake, Nepal",
+      "disaster_type": "earthquake",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "valid_ground_coverage": 0.9173,
+      "pre_image": "/data1/site_020/pre.png",
+      "post_image": "/data1/site_020/post.png",
+      "damage_geojson": "/data1/site_020/damage.geojson",
+      "summary": {
+        "total_structures": 0,
+        "no_damage": 0,
+        "minor_damage": 0,
+        "major_damage": 0,
+        "destroyed": 0
+      }
+    }
+  ]
+}
