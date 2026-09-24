@@ -1,23 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Fira_Code, Inter } from "next/font/google";
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const firaCode = Fira_Code({
-  subsets: ["latin"],
-  variable: "--font-fira-code",
-  display: "swap",
-});
+import Providers from "@/components/Providers";
+import TerrainBackground from "@/components/TerrainBackground";
+import ScrollProgress from "@/components/ScrollProgress";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#060B1C",
 };
 
 export const metadata: Metadata = {
@@ -33,10 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${inter.variable} ${firaCode.variable} font-sans antialiased bg-[#0f172a] text-slate-100 min-h-screen`}
-      >
-        {children}
+      <body className="min-h-screen font-sans text-paper antialiased">
+        <Providers>
+          <TerrainBackground />
+          <ScrollProgress />
+          {children}
+        </Providers>
       </body>
     </html>
   );

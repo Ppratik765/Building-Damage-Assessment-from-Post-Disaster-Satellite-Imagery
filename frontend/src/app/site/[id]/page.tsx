@@ -1,44 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
-import StatCards from "@/components/StatCards";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
+import SiteExplorer from "@/components/SiteExplorer";
+import SiteKeyboardNav from "@/components/SiteKeyboardNav";
+import { BrandMark } from "@/components/TopNav";
 import { getSite, getManifest, getAllSiteParams } from "@/lib/data";
 import type { DataProfile } from "@/lib/types";
-
-// Leaflet needs browser DOM — disable SSR
-const SwipeMap = dynamic(() => import("@/components/SwipeMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[55vh] min-h-[380px] sm:h-[540px] md:h-[620px] lg:h-[700px] rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-slate-400">
-        <svg
-          className="w-8 h-8 animate-spin text-cyan-400"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-        <span className="text-sm font-mono text-cyan-300">
-          Loading satellite imagery tile...
-        </span>
-      </div>
-    </div>
-  ),
-});
+import { CATEGORY_LABELS, categoryOf, siteLabel, sourceLabel } from "@/components/siteFormat";
 
 interface SitePageProps {
   params: { id: string };
@@ -49,12 +19,8 @@ export async function generateStaticParams() {
   return await getAllSiteParams();
 }
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: SitePageProps): Promise<Metadata> {
-  const profile: DataProfile =
-    searchParams?.profile === "data1" ? "data1" : "data";
+export async function generateMetadata({ params, searchParams }: SitePageProps): Promise<Metadata> {
+  const profile: DataProfile = searchParams?.profile === "data1" ? "data1" : "data";
   const { site } = await getSite(params.id, profile);
 
   if (!site) {
@@ -64,23 +30,17 @@ export async function generateMetadata({
     };
   }
 
+  const label = siteLabel(site);
   return {
-    title: `${site.name} — Damage Assessment`,
-    description: `Disaster damage assessment for ${site.name}: ${site.summary.total_structures} structures analyzed.`,
+    title: `${label.full} — Damage Assessment`,
+    description: `Disaster damage assessment for ${label.full}: ${site.summary.total_structures} structures analyzed.`,
   };
 }
 
-export default async function SitePage({
-  params,
-  searchParams,
-}: SitePageProps) {
-  const requestedProfile: DataProfile =
-    searchParams?.profile === "data1" ? "data1" : "data";
+export default async function SitePage({ params, searchParams }: SitePageProps) {
+  const requestedProfile: DataProfile = searchParams?.profile === "data1" ? "data1" : "data";
 
-  const { site, profile: activeProfile } = await getSite(
-    params.id,
-    requestedProfile
-  );
+  const { site, profile: activeProfile } = await getSite(params.id, requestedProfile);
 
   if (!site) {
     notFound();
@@ -97,184 +57,113 @@ export default async function SitePage({
   const siteNum = currentIndex >= 0 ? currentIndex + 1 : 1;
   const totalSites = sites.length;
 
-  const prevSite =
-    currentIndex > 0
-      ? sites[currentIndex - 1]
-      : sites[sites.length - 1];
-  const nextSite =
-    currentIndex >= 0 && currentIndex < sites.length - 1
-      ? sites[currentIndex + 1]
-      : sites[0];
+  const prevSite = currentIndex > 0 ? sites[currentIndex - 1] : sites[sites.length - 1];
+  const nextSite = currentIndex >= 0 && currentIndex < sites.length - 1 ? sites[currentIndex + 1] : sites[0];
+  const prevHref = prevSite ? `/site/${prevSite.id}?profile=${activeProfile}` : undefined;
+  const nextHref = nextSite ? `/site/${nextSite.id}?profile=${activeProfile}` : undefined;
 
-  const sourceBadge =
-    activeProfile === "data1"
-      ? "Maxar Open Data (Real Satellite)"
-      : site.source === "xbd_test"
-      ? "xView2 Benchmark"
-      : "Real-World Satellite Scene";
-
-  const disasterBadge =
-    site.disaster_name || site.disaster_type || "Disaster Event";
+  const label = siteLabel(site);
+  const category = categoryOf(site);
 
   return (
-    <main className="min-h-screen pb-16">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/70">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          {/* Back link & breadcrumb */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href={`/?profile=${activeProfile}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-colors group"
-            >
-              <svg
-                className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-cyan-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              <span>Catalog</span>
+    <main className="min-h-screen pb-20">
+      <SiteKeyboardNav prevHref={prevHref} nextHref={nextHref} />
+
+      {/* Top bar */}
+      <header className="sticky top-0 z-50">
+        <div className="absolute inset-0 bg-ink/80 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_75%,transparent)]" />
+        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Link href="/" aria-label="Home" className="rounded-lg">
+              <BrandMark />
             </Link>
-
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono">
-              <span>/</span>
-              <span className="text-slate-300 font-semibold">{site.id}</span>
-            </div>
+            <Link
+              href={`/?profile=${activeProfile}#sites`}
+              className="group inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-sm text-haze ring-1 ring-line transition-colors hover:text-paper hover:ring-signal/40"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              All sites
+            </Link>
           </div>
-
-          {/* Profile Switcher */}
-          <div className="flex items-center gap-2">
-            <ProfileSwitcher
-              currentProfile={activeProfile}
-              siteCounts={{
-                data: dataManifest.sites.length,
-                data1: data1Manifest.sites.length,
-              }}
-            />
-          </div>
+          <ProfileSwitcher
+            currentProfile={activeProfile}
+            size="sm"
+            className="w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none"
+            siteCounts={{ data: dataManifest.sites.length, data1: data1Manifest.sites.length }}
+          />
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-        {/* Site Header Banner & Quick Cycler */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div className="space-y-1.5 flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  {site.id}
+      <div className="mx-auto max-w-7xl space-y-8 px-4 pt-6 sm:px-6 sm:pt-10">
+        {/* Title block */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            <p className="rise text-base text-haze" style={{ animationDelay: "60ms" }}>
+              {label.event}
+            </p>
+            <h1
+              className="rise type-display mt-2 break-words text-[clamp(2.4rem,6vw,4.5rem)] text-paper"
+              style={{ animationDelay: "140ms" }}
+            >
+              {label.title}
+            </h1>
+            <div className="rise mt-4 flex flex-wrap gap-2 text-xs" style={{ animationDelay: "240ms" }}>
+              <span className="rounded-full px-3 py-1 text-paper ring-1 ring-line">{sourceLabel(site)}</span>
+              {category !== "other" && (
+                <span className="rounded-full px-3 py-1 text-paper ring-1 ring-line">
+                  {CATEGORY_LABELS[category].replace(/s$/, "")}
                 </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300">
-                  {sourceBadge}
-                </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                  {disasterBadge}
-                </span>
-              </div>
-
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight break-words">
-                {site.name}
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 font-mono pt-1">
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  </svg>
-                  {site.center.lat.toFixed(4)}°N, {site.center.lng.toFixed(4)}°{site.center.lng >= 0 ? "E" : "W"}
-                </span>
-                <span>•</span>
-                <span>{site.summary.total_structures} Structures Analyzed</span>
-              </div>
+              )}
+              <span className="rounded-full px-3 py-1 font-mono text-haze ring-1 ring-line">{site.id}</span>
             </div>
-
-            {/* Next / Prev Site Cycler Controls */}
-            {prevSite && nextSite && (
-              <div className="flex items-center gap-2 self-start sm:self-auto flex-shrink-0">
-                <Link
-                  href={`/site/${prevSite.id}?profile=${activeProfile}`}
-                  title={`Previous Site: ${prevSite.name}`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all shadow-md active:scale-95"
-                >
-                  <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <span className="hidden sm:inline">Prev</span>
-                </Link>
-
-                <div className="px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs font-mono text-slate-400 text-center min-w-[70px]">
-                  {siteNum} / {totalSites}
-                </div>
-
-                <Link
-                  href={`/site/${nextSite.id}?profile=${activeProfile}`}
-                  title={`Next Site: ${nextSite.name}`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all shadow-md active:scale-95"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            )}
           </div>
+
+          {prevSite && nextSite && (
+            <nav aria-label="Other sites" className="rise flex shrink-0 items-center gap-2" style={{ animationDelay: "300ms" }}>
+              <Link
+                href={prevHref!}
+                title={`Previous: ${siteLabel(prevSite).full} (←)`}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-paper ring-1 ring-line transition hover:bg-deep hover:ring-signal/40 active:scale-95"
+                aria-label={`Previous site: ${siteLabel(prevSite).full}`}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Link>
+              <span className="tabular min-w-[4.5rem] text-center text-sm text-haze">
+                <span className="text-paper">{siteNum}</span> of {totalSites}
+              </span>
+              <Link
+                href={nextHref!}
+                title={`Next: ${siteLabel(nextSite).full} (→)`}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-paper ring-1 ring-line transition hover:bg-deep hover:ring-signal/40 active:scale-95"
+                aria-label={`Next site: ${siteLabel(nextSite).full}`}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Link>
+            </nav>
+          )}
         </div>
 
-        {/* Map Section */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span>Interactive Split-View Slider • Pan & Zoom freely across imagery</span>
+        <SiteExplorer site={site} profile={activeProfile} />
+
+        {/* Up next */}
+        {nextSite && nextSite.id !== site.id && (
+          <Link
+            href={nextHref!}
+            className="group panel mt-4 flex items-center justify-between gap-4 rounded-[22px] p-5 transition-colors hover:bg-deep/90 sm:p-6"
+          >
+            <div className="min-w-0">
+              <p className="text-sm text-haze">Up next</p>
+              <p className="type-wide mt-1 truncate text-xl font-semibold text-paper">{siteLabel(nextSite).full}</p>
+              <p className="tabular mt-1 text-sm text-haze">
+                {nextSite.summary.total_structures > 0
+                  ? `${nextSite.summary.total_structures} buildings, ${nextSite.summary.destroyed} destroyed`
+                  : "No buildings detected"}
+              </p>
+            </div>
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-paper text-ink transition-transform duration-300 group-hover:translate-x-1">
+              <ChevronRight className="h-5 w-5" />
             </span>
-            <span className="hidden sm:inline font-mono text-[11px] text-slate-500">
-              Double-click or pinch to zoom
-            </span>
-          </div>
-
-          <SwipeMap site={site} profile={activeProfile} />
-        </div>
-
-        {/* Damage Stats Grid */}
-        <div className="space-y-2">
-          <div className="text-xs uppercase font-mono tracking-widest text-slate-400 px-1">
-            Structure Damage Classification
-          </div>
-          <StatCards summary={site.summary} />
-        </div>
-
-        {/* Bottom Navigation for Mobile */}
-        {prevSite && nextSite && (
-          <div className="flex sm:hidden items-center justify-between gap-3 pt-2">
-            <Link
-              href={`/site/${prevSite.id}?profile=${activeProfile}`}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-semibold text-slate-200"
-            >
-              <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Previous Site</span>
-            </Link>
-
-            <Link
-              href={`/site/${nextSite.id}?profile=${activeProfile}`}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-semibold text-slate-200"
-            >
-              <span>Next Site</span>
-              <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
+          </Link>
         )}
       </div>
     </main>

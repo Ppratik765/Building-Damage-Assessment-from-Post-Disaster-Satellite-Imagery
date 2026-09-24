@@ -3,38 +3,179 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --border-subtle: rgba(148, 163, 184, 0.15);
-  --accent-cyan: #22d3ee;
-  --accent-green: #4ade80;
-  --accent-gradient: linear-gradient(135deg, #22d3ee 0%, #4ade80 100%);
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --ink: #060b1c;
+  --deep: #0c1530;
+  --line: #22305c;
+  --paper: #e8ecf6;
+  --haze: #8e9ac0;
+  --faint: #5d6a91;
+  --signal: #a5b8ff;
 
   --damage-none: #22c55e;
   --damage-minor: #eab308;
   --damage-major: #f97316;
   --damage-destroyed: #ef4444;
+
+  /* The Joint Damage Scale as a gradient: the site's signature line */
+  --spectrum: linear-gradient(
+    90deg,
+    var(--damage-none) 0%,
+    var(--damage-minor) 38%,
+    var(--damage-major) 66%,
+    var(--damage-destroyed) 100%
+  );
+  --spectrum-v: linear-gradient(
+    180deg,
+    var(--damage-none) 0%,
+    var(--damage-minor) 38%,
+    var(--damage-major) 66%,
+    var(--damage-destroyed) 100%
+  );
+
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  color: var(--paper);
 }
 
-/* Leaflet overrides for dark theme and strict containment */
+body {
+  font-family: "Archivo Variable", system-ui, sans-serif;
+  font-stretch: 100%;
+}
+
+/* Background lives on <html> so the fixed terrain canvas (z -10) paints above it */
+html {
+  background-color: var(--ink);
+  background-image:
+    radial-gradient(1200px 700px at 12% -10%, rgba(52, 74, 170, 0.28), transparent 60%),
+    radial-gradient(900px 600px at 105% 110%, rgba(249, 115, 22, 0.07), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(165, 184, 255, 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------- Type ---------- */
+
+.type-display {
+  font-stretch: 125%;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+}
+
+.type-wide {
+  font-stretch: 115%;
+  letter-spacing: -0.01em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Surfaces ---------- */
+
+.panel {
+  background: rgba(12, 21, 48, 0.72);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid rgba(165, 184, 255, 0.12);
+}
+
+.hairline {
+  border-color: rgba(165, 184, 255, 0.12);
+}
+
+/* Border glow that follows the pointer (set --mx / --my from JS) */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(165, 184, 255, 0.55),
+    transparent 65%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.spotlight:hover::before,
+.spotlight:focus-within::before {
+  opacity: 1;
+}
+
+.spectrum-line {
+  background: var(--spectrum);
+}
+
+.spectrum-line-v {
+  background: var(--spectrum-v);
+}
+
+/* Corner registration marks, like the frame of a satellite scene */
+.reg-marks {
+  --m: 14px;
+  --c: rgba(232, 236, 246, 0.7);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--m) 1.5px,
+    linear-gradient(var(--c), var(--c)) top left / 1.5px var(--m),
+    linear-gradient(var(--c), var(--c)) top right / var(--m) 1.5px,
+    linear-gradient(var(--c), var(--c)) top right / 1.5px var(--m),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--m) 1.5px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1.5px var(--m),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--m) 1.5px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1.5px var(--m);
+  background-repeat: no-repeat;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Leaflet (dark theme, strict containment) ---------- */
+
 .leaflet-container {
-  background: var(--bg-primary) !important;
+  background: var(--ink) !important;
+  font-family: inherit !important;
   touch-action: none !important;
   overflow: hidden !important;
   position: relative !important;
@@ -42,138 +183,78 @@ body {
   height: 100% !important;
 }
 
-.leaflet-control-zoom a {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-subtle) !important;
-}
-
-.leaflet-control-zoom a:hover {
-  background: var(--bg-card) !important;
-}
-
 .leaflet-popup-content-wrapper {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  background: rgba(12, 21, 48, 0.94) !important;
+  color: var(--paper) !important;
+  border: 1px solid rgba(165, 184, 255, 0.18);
+  border-radius: 14px !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(10px);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
 }
 
 .leaflet-popup-tip {
-  background: var(--bg-secondary) !important;
+  background: rgba(12, 21, 48, 0.94) !important;
 }
 
 .leaflet-popup-close-button {
-  color: var(--text-secondary) !important;
+  color: var(--haze) !important;
 }
 
-/* Glassmorphism card */
-.glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.leaflet-interactive {
+  transition: fill-opacity 0.2s ease, stroke-width 0.2s ease;
 }
 
-.glass-card:hover {
-  border-color: rgba(34, 211, 238, 0.3);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(34, 211, 238, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
-}
+/* ---------- Scrollbar ---------- */
 
-/* Gradient text */
-.gradient-text {
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Animated gradient border */
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animated-border {
-  position: relative;
-}
-
-.animated-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, #22d3ee, #4ade80, #22d3ee);
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Damage bar */
-.damage-bar {
-  display: flex;
-  height: 6px;
-  border-radius: 3px;
-  overflow: hidden;
-  gap: 1px;
-}
-
-.damage-bar > div {
-  transition: width 0.5s ease;
-}
-
-/* Swipe handle */
-.swipe-handle {
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.swipe-handle:hover .swipe-line {
-  background: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
-}
-
-/* Pulse animation for stat numbers */
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.stat-number {
-  animation: count-up 0.5s ease-out forwards;
-}
-
-/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: var(--ink);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  border-radius: 3px;
+  background: var(--line);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--faint);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Page-load sequence (hero only) ---------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.rise {
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

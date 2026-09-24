@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import {
-  MapContainer,
-  ImageOverlay,
-  GeoJSON,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, ImageOverlay, GeoJSON, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Layers, Minus, MoveHorizontal, Pause, Play, Plus, Scan } from "lucide-react";
 import type { Site, DamageGeoJSON, DamageTier } from "@/lib/types";
 import { DAMAGE_COLORS, DAMAGE_LABELS } from "@/lib/types";
+import { TIER_ORDER } from "./siteFormat";
 
 interface SwipeMapProps {
   site: Site;
   profile?: string;
+  showDamage?: boolean;
+  onToggleDamage?: () => void;
+  visibleTiers?: DamageTier[];
+  georeferenced?: boolean;
 }
 
 /** Component to fit map bounds to the site on mount and expose map ref */
@@ -34,7 +34,19 @@ function MapBridge({
     }
     onMapReady(map);
     map.fitBounds(bounds, { padding: [20, 20] });
-  }, [map, bounds, onMapReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+  return null;
+}
+
+/** Reports cursor position and zoom for the readout. */
+function Telemetry({ onChange }: { onChange: (t: { lat?: number; lng?: number; zoom: number }) => void }) {
+  const map = useMapEvents({
+    mousemove: (e) => onChange({ lat: e.latlng.lat, lng: e.latlng.lng, zoom: map.getZoom() }),
+    mouseout: () => onChange({ zoom: map.getZoom() }),
+    zoomend: () => onChange({ zoom: map.getZoom() }),
+  });
+  useEffect(() => onChange({ zoom: map.getZoom() }), [map, onChange]);
   return null;
 }
 
@@ -48,10 +60,13 @@ function SwipeController({
   fraction,
   postOverlayRef,
   containerRef,
+  layersKey,
 }: {
   fraction: number;
   postOverlayRef: React.RefObject<L.ImageOverlay | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  /** Changes whenever the damage layer is added, removed or filtered */
+  layersKey: string;
 }) {
   const applyClip = useCallback(() => {
     if (!containerRef.current) return;
@@ -66,25 +81,19 @@ function SwipeController({
     if (postEl) {
       const imgRect = postEl.getBoundingClientRect();
       if (imgRect.width > 0) {
-        const clipX = Math.max(
-          0,
-          Math.min(imgRect.width, sliderX - imgRect.left)
-        );
+        const clipX = Math.max(0, Math.min(imgRect.width, sliderX - imgRect.left));
         postEl.style.clipPath = `inset(0 0 0 ${clipX}px)`;
       }
     }
 
     // Clip the Damage GeoJSON SVG if present
     const svgEl = containerRef.current.querySelector(
-      ".leaflet-damagePane-pane svg, .leaflet-overlay-pane svg"
+      ".leaflet-damage-pane svg, .leaflet-overlay-pane svg"
     ) as SVGElement | null;
     if (svgEl) {
       const svgRect = svgEl.getBoundingClientRect();
       if (svgRect.width > 0) {
-        const clipX = Math.max(
-          0,
-          Math.min(svgRect.width, sliderX - svgRect.left)
-        );
+        const clipX = Math.max(0, Math.min(svgRect.width, sliderX - svgRect.left));
         svgEl.style.clipPath = `inset(0 0 0 ${clipX}px)`;
       }
     }
@@ -95,13 +104,29 @@ function SwipeController({
     applyClip();
   }, [applyClip]);
 
+  // Leaflet repositions the vector SVG after moveend/zoomend, so re-clip on the next frame too
+  const applyClipDeferred = useCallback(() => {
+    requestAnimationFrame(() => {
+      applyClip();
+      requestAnimationFrame(applyClip);
+    });
+  }, [applyClip]);
+
   // Listen to all map movements, zooms, and resizes
   useMapEvents({
     move: applyClip,
     zoom: applyClip,
-    resize: applyClip,
-    viewreset: applyClip,
+    resize: applyClipDeferred,
+    viewreset: applyClipDeferred,
+    moveend: applyClipDeferred,
+    zoomend: applyClipDeferred,
+    layeradd: applyClipDeferred,
   });
+
+  // The damage SVG is created or redrawn when its layer changes
+  useEffect(() => {
+    applyClipDeferred();
+  }, [layersKey, applyClipDeferred]);
 
   // Ensure clip applies when the overlay image finishes loading
   useEffect(() => {
@@ -122,30 +147,88 @@ function SwipeController({
   return null;
 }
 
-export default function SwipeMap({ site }: SwipeMapProps) {
+function popupHtml(tier: DamageTier, buildingId: number | string, confidence?: number) {
+  const color = DAMAGE_COLORS[tier] || "#888";
+  const label = DAMAGE_LABELS[tier] || tier;
+  const pct = typeof confidence === "number" ? Math.round(confidence * 1000) / 10 : null;
+  return `
+    <div style="min-width: 190px; font-family: 'Archivo Variable', system-ui, sans-serif;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="width:10px; height:10px; border-radius:999px; background:${color}; box-shadow:0 0 12px ${color};"></span>
+        <strong style="font-size:14px; color:#E8ECF6; font-stretch:115%;">${label}</strong>
+      </div>
+      <div style="margin-top:8px; font-size:12px; color:#8E9AC0;">Building <span style="color:#E8ECF6; font-family:'IBM Plex Mono', monospace;">#${buildingId}</span></div>
+      ${
+        pct === null
+          ? ""
+          : `<div style="margin-top:8px; font-size:12px; color:#8E9AC0; display:flex; justify-content:space-between;">
+               <span>Model confidence</span><span style="color:#E8ECF6; font-family:'IBM Plex Mono', monospace;">${pct}%</span>
+             </div>
+             <div style="margin-top:5px; height:4px; border-radius:4px; background:#22305C; overflow:hidden;">
+               <div style="width:${pct}%; height:100%; background:${color};"></div>
+             </div>`
+      }
+    </div>`;
+}
+
+export default function SwipeMap({
+  site,
+  showDamage: showDamageProp,
+  onToggleDamage,
+  visibleTiers = TIER_ORDER,
+  georeferenced = true,
+}: SwipeMapProps) {
   const [fraction, setFraction] = useState(0.5);
   const [isDragging, setIsDragging] = useState(false);
+  const [sweeping, setSweeping] = useState(false);
   const [damageData, setDamageData] = useState<DamageGeoJSON | null>(null);
-  const [showDamage, setShowDamage] = useState(true);
-  const [showLegend, setShowLegend] = useState(true);
+  const [internalShowDamage, setInternalShowDamage] = useState(true);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const [telemetry, setTelemetry] = useState<{ lat?: number; lng?: number; zoom: number }>({ zoom: 16 });
+
+  const showDamage = showDamageProp ?? internalShowDamage;
+  const toggleDamage = onToggleDamage ?? (() => setInternalShowDamage((v) => !v));
 
   const containerRef = useRef<HTMLDivElement>(null);
   const postOverlayRef = useRef<L.ImageOverlay | null>(null);
 
-  const bounds: L.LatLngBoundsExpression = [
-    [site.bounds[0][0], site.bounds[0][1]],
-    [site.bounds[1][0], site.bounds[1][1]],
-  ];
+  const bounds: L.LatLngBoundsExpression = useMemo(
+    () => [
+      [site.bounds[0][0], site.bounds[0][1]],
+      [site.bounds[1][0], site.bounds[1][1]],
+    ],
+    [site.bounds]
+  );
 
   // Load damage GeoJSON
   useEffect(() => {
     if (!site.damage_geojson) return;
+    let cancelled = false;
     fetch(site.damage_geojson)
       .then((r) => r.json())
-      .then((data: DamageGeoJSON) => setDamageData(data))
+      .then((data: DamageGeoJSON) => !cancelled && setDamageData(data))
       .catch((err) => console.error("Failed to load damage data:", err));
+    return () => {
+      cancelled = true;
+    };
   }, [site.damage_geojson]);
+
+  // Auto sweep: glide the divider back and forth
+  useEffect(() => {
+    if (!sweeping) return;
+    let raf = 0;
+    let phase = Math.asin(Math.max(-1, Math.min(1, (fraction - 0.5) / 0.4)));
+    let last = performance.now();
+    const tick = (now: number) => {
+      phase += ((now - last) / 1000) * 0.9;
+      last = now;
+      setFraction(0.5 + 0.4 * Math.sin(phase));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sweeping]);
 
   // Swipe handlers measured against container bounds
   const handleSwipeMove = useCallback((clientX: number) => {
@@ -153,8 +236,7 @@ export default function SwipeMap({ site }: SwipeMapProps) {
     const rect = containerRef.current.getBoundingClientRect();
     if (rect.width === 0) return;
     const x = clientX - rect.left;
-    const frac = Math.max(0.01, Math.min(0.99, x / rect.width));
-    setFraction(frac);
+    setFraction(Math.max(0.01, Math.min(0.99, x / rect.width)));
   }, []);
 
   const handleMouseMove = useCallback(
@@ -177,9 +259,7 @@ export default function SwipeMap({ site }: SwipeMapProps) {
     [isDragging, handleSwipeMove]
   );
 
-  const stopDragging = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+  const stopDragging = useCallback(() => setIsDragging(false), []);
 
   useEffect(() => {
     if (isDragging) {
@@ -199,262 +279,225 @@ export default function SwipeMap({ site }: SwipeMapProps) {
   }, [isDragging, handleMouseMove, handleTouchMove, stopDragging]);
 
   // Map action buttons
-  const handleZoomIn = () => mapInstance?.zoomIn();
-  const handleZoomOut = () => mapInstance?.zoomOut();
-  const handleResetBounds = () => {
-    mapInstance?.fitBounds(bounds, { padding: [16, 16], maxZoom: 18 });
+  const handleZoomIn = useCallback(() => mapInstance?.zoomIn(), [mapInstance]);
+  const handleZoomOut = useCallback(() => mapInstance?.zoomOut(), [mapInstance]);
+  const handleResetBounds = useCallback(() => {
+    mapInstance?.flyToBounds(bounds, { padding: [16, 16], maxZoom: 18, duration: 0.8 });
+  }, [mapInstance, bounds]);
+
+  // Keyboard: S sweep, R reset, +/- zoom, [ ] nudge divider
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(target.tagName)) return;
+      const k = e.key.toLowerCase();
+      if (k === "s") setSweeping((v) => !v);
+      else if (k === "r") handleResetBounds();
+      else if (k === "+" || k === "=") handleZoomIn();
+      else if (k === "-" || k === "_") handleZoomOut();
+      else if (k === "[") {
+        setSweeping(false);
+        setFraction((f) => Math.max(0.01, f - 0.05));
+      } else if (k === "]") {
+        setSweeping(false);
+        setFraction((f) => Math.min(0.99, f + 0.05));
+      } else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleResetBounds, handleZoomIn, handleZoomOut]);
+
+  const onHandleKeyDown = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 0.15 : 0.03;
+    if (e.key === "ArrowLeft") setFraction((f) => Math.max(0.01, f - step));
+    else if (e.key === "ArrowRight") setFraction((f) => Math.min(0.99, f + step));
+    else if (e.key === "Home") setFraction(0.01);
+    else if (e.key === "End") setFraction(0.99);
+    else return;
+    e.preventDefault();
+    e.stopPropagation(); // don't also switch sites
+    setSweeping(false);
   };
 
-  // GeoJSON polygon styling
-  const geoJsonStyle = (feature: GeoJSON.Feature | undefined) => {
+  // GeoJSON polygon styling (memoised so per-frame re-renders don't restyle every polygon)
+  const geoJsonStyle = useCallback((feature: GeoJSON.Feature | undefined): L.PathOptions => {
     const tier = (feature?.properties?.damage_tier as DamageTier) || "no-damage";
     const color = DAMAGE_COLORS[tier] || "#888";
-    return {
-      color,
-      weight: 2,
-      opacity: 0.95,
-      fillColor: color,
-      fillOpacity: 0.45,
-    };
-  };
+    return { color, weight: 2, opacity: 0.95, fillColor: color, fillOpacity: 0.4 };
+  }, []);
 
-  const onEachFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
-    const props = feature.properties;
-    if (!props) return;
-    const tier = (props.damage_tier as DamageTier) || "no-damage";
-    const color = DAMAGE_COLORS[tier] || "#888";
-    const label = DAMAGE_LABELS[tier] || tier;
-    const confidence = props.confidence ? (props.confidence * 100).toFixed(1) : "—";
+  const onEachFeature = useCallback(
+    (feature: GeoJSON.Feature, layer: L.Layer) => {
+      const props = feature.properties;
+      if (!props) return;
+      const tier = (props.damage_tier as DamageTier) || "no-damage";
+      layer.bindPopup(popupHtml(tier, props.building_id ?? "—", props.confidence), {
+        closeButton: true,
+        // keep popups clear of the control column and the bottom bar
+        autoPanPaddingTopLeft: L.point(24, 64),
+        autoPanPaddingBottomRight: L.point(84, 96),
+      });
+      const path = layer as L.Path;
+      path.on({
+        mouseover: () => {
+          path.setStyle({ weight: 3.5, fillOpacity: 0.72 });
+          path.bringToFront();
+        },
+        mouseout: () => path.setStyle(geoJsonStyle(feature)),
+      });
+    },
+    [geoJsonStyle]
+  );
 
-    layer.bindPopup(`
-      <div style="font-family: var(--font-fira-code), monospace; min-width: 170px; padding: 4px 2px;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};
-                      box-shadow: 0 0 10px ${color};"></div>
-          <strong style="font-size: 13px; color: #f8fafc;">${label}</strong>
-        </div>
-        <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
-          Building ID: <span style="color: #cbd5e1;">#${props.building_id ?? "—"}</span><br/>
-          Confidence: <span style="color: ${color}; font-weight: 600;">${confidence}%</span>
-        </div>
-      </div>
-    `);
-  };
+  const tierFilter = useCallback(
+    (feature: GeoJSON.Feature) =>
+      visibleTiers.includes(((feature.properties?.damage_tier as DamageTier) || "no-damage") as DamageTier),
+    [visibleTiers]
+  );
+
+  const percent = Math.round(fraction * 100);
+  const iconBtn =
+    "flex h-10 w-10 items-center justify-center rounded-xl bg-ink/80 text-paper ring-1 ring-signal/15 backdrop-blur-md transition hover:bg-deep hover:ring-signal/40 active:scale-95";
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full rounded-2xl select-none overflow-hidden glass-card border border-slate-700/60 shadow-2xl"
+      className="relative w-full select-none overflow-hidden rounded-frame bg-ink shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] ring-1 ring-signal/15"
     >
-      {/* Map Viewport Container - Fixed responsive height, strictly contained */}
-      <div className="w-full relative h-[440px] sm:h-[520px] md:h-[600px] lg:h-[660px] overflow-hidden rounded-2xl bg-slate-950">
+      <div className="relative h-[62vh] min-h-[420px] w-full overflow-hidden lg:h-[72vh] lg:max-h-[820px]">
         <MapContainer
           center={[site.center.lat, site.center.lng]}
           zoom={16}
           minZoom={12}
           maxZoom={22}
+          zoomSnap={0.25}
+          zoomDelta={0.5}
+          wheelPxPerZoomLevel={90}
           style={{ width: "100%", height: "100%" }}
           zoomControl={false}
+          attributionControl={false}
           scrollWheelZoom={!isDragging}
           doubleClickZoom={!isDragging}
           touchZoom={!isDragging}
           dragging={!isDragging}
+          keyboard={false}
         >
           <MapBridge bounds={bounds} onMapReady={setMapInstance} />
+          <Telemetry onChange={setTelemetry} />
 
           {/* Pre-disaster imagery layer */}
           <ImageOverlay url={site.pre_image} bounds={bounds} zIndex={1} />
 
           {/* Post-disaster clipped imagery layer */}
-          <ImageOverlay
-            url={site.post_image}
-            bounds={bounds}
-            zIndex={2}
-            ref={postOverlayRef}
-          />
+          <ImageOverlay url={site.post_image} bounds={bounds} zIndex={2} ref={postOverlayRef} />
 
           <SwipeController
             fraction={fraction}
             postOverlayRef={postOverlayRef}
             containerRef={containerRef}
+            layersKey={`${showDamage}-${damageData?.features.length ?? 0}-${visibleTiers.join(",")}`}
           />
 
           {/* Damage polygon overlays */}
           {showDamage && damageData && (
             <GeoJSON
-              key={`damage-${site.id}-${damageData.features.length}`}
+              key={`damage-${site.id}-${damageData.features.length}-${visibleTiers.join(",")}`}
               data={damageData}
               style={geoJsonStyle}
               onEachFeature={onEachFeature}
+              filter={tierFilter}
               pane="damagePane"
             />
           )}
         </MapContainer>
 
-        {/* Top Badges (Pre vs Post) */}
-        <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none z-[800]">
-          <div className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-slate-900/90 border border-cyan-500/40 text-cyan-300 backdrop-blur-md shadow-lg pointer-events-auto">
-            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>Pre-Disaster</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-slate-900/90 border border-orange-500/40 text-orange-300 backdrop-blur-md shadow-lg pointer-events-auto">
-            <span>Post-Disaster</span>
-            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-orange-400 animate-pulse" />
-          </div>
+        {/* Before / after labels */}
+        <div className="pointer-events-none absolute inset-x-4 top-4 z-[800] flex items-center justify-between text-xs font-medium sm:inset-x-5 sm:top-5">
+          <span className="rounded-full bg-ink/80 px-3 py-1.5 text-paper backdrop-blur-md">Before</span>
+          <span className="mr-14 rounded-full bg-ink/80 px-3 py-1.5 text-paper backdrop-blur-md">After</span>
         </div>
 
-        {/* Floating Interactive Map Controls (Zoom In, Zoom Out, Recenter) */}
-        <div className="absolute top-14 right-3 z-[850] flex flex-col gap-2 pointer-events-auto">
-          <button
-            onClick={handleZoomIn}
-            title="Zoom In"
-            aria-label="Zoom in"
-            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+        {/* Map controls */}
+        <div className="absolute right-4 top-4 z-[850] flex flex-col gap-2 sm:right-5 sm:top-5">
+          <button onClick={handleZoomIn} title="Zoom in (+)" aria-label="Zoom in" className={iconBtn}>
+            <Plus className="h-4 w-4" />
+          </button>
+          <button onClick={handleZoomOut} title="Zoom out (−)" aria-label="Zoom out" className={iconBtn}>
+            <Minus className="h-4 w-4" />
+          </button>
+          <button onClick={handleResetBounds} title="Fit the whole scene (R)" aria-label="Fit the whole scene" className={iconBtn}>
+            <Scan className="h-4 w-4" />
           </button>
           <button
-            onClick={handleZoomOut}
-            title="Zoom Out"
-            aria-label="Zoom out"
-            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
+            onClick={() => setSweeping((v) => !v)}
+            title={sweeping ? "Stop the sweep (S)" : "Sweep the divider automatically (S)"}
+            aria-label={sweeping ? "Stop the automatic sweep" : "Sweep the divider automatically"}
+            aria-pressed={sweeping}
+            className={`${iconBtn} ${sweeping ? "!bg-signal !text-ink" : ""}`}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M20 12H4"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={handleResetBounds}
-            title="Reset to Full Scene"
-            aria-label="Reset to full scene"
-            className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 flex items-center justify-center backdrop-blur-md shadow-lg transition-transform active:scale-95"
-          >
-            <svg
-              className="w-4 h-4 text-cyan-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 2v4m0 12v4M2 12h4m12 0h4m-7-7l4-4m-4 18l4 4M7 7L3 3m4 14l-4 4"
-              />
-            </svg>
+            {sweeping ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
         </div>
 
-        {/* Draggable Swipe Divider Handle (Anchored to container percentage) */}
+        {/* Divider */}
         <div
-          className="swipe-handle absolute top-0 bottom-0 z-[900] w-12 -ml-6 cursor-col-resize select-none pointer-events-auto touch-none"
+          className="absolute bottom-0 top-0 z-[900] -ml-6 w-12 cursor-col-resize touch-none select-none"
           style={{ left: `${fraction * 100}%` }}
           onMouseDown={(e) => {
             e.preventDefault();
+            setSweeping(false);
             setIsDragging(true);
           }}
           onTouchStart={(e) => {
             e.stopPropagation();
+            setSweeping(false);
             setIsDragging(true);
           }}
         >
-          {/* Visual thin line */}
-          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-cyan-400 via-white to-orange-400 shadow-[0_0_14px_rgba(255,255,255,0.9)]" />
-
-          {/* Floating circular knob */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/95 border-2 border-white shadow-2xl flex items-center justify-center backdrop-blur-md transition-transform active:scale-110">
-            <svg
-              className="w-5 h-5 text-cyan-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M8 9l-4 3 4 3m8-6l4 3-4 3"
-              />
-            </svg>
+          <div className="spectrum-line-v absolute bottom-0 left-1/2 top-0 w-[2px] -translate-x-1/2 shadow-[0_0_16px_rgba(255,255,255,0.55)]" />
+          <div
+            role="slider"
+            tabIndex={0}
+            aria-label="Before and after divider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent}
+            aria-valuetext={`${percent}% before, ${100 - percent}% after`}
+            onKeyDown={onHandleKeyDown}
+            className={`absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/85 backdrop-blur-md transition-transform duration-200 ${
+              isDragging ? "scale-110" : "hover:scale-105"
+            }`}
+          >
+            <MoveHorizontal className="h-5 w-5 text-paper" />
           </div>
         </div>
 
-        {/* Bottom Control Bar: Damage Toggle & Legend Drawer */}
-        <div className="absolute bottom-3 inset-x-3 flex items-end justify-between gap-2 pointer-events-none z-[850]">
-          {/* Left: Collapsible Legend Drawer */}
-          <div className="pointer-events-auto flex flex-col items-start gap-1">
-            {showDamage && showLegend && (
-              <div className="p-2.5 sm:p-3 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md text-[11px] sm:text-xs space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="font-semibold text-slate-400 uppercase tracking-wider text-[10px] mb-1">
-                  Damage Legend
-                </div>
-                {(Object.entries(DAMAGE_COLORS) as [DamageTier, string][]).map(
-                  ([tier, color]) => (
-                    <div key={tier} className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded-sm shadow-sm"
-                        style={{
-                          backgroundColor: color,
-                          boxShadow: `0 0 6px ${color}60`,
-                        }}
-                      />
-                      <span className="text-slate-300 font-medium">
-                        {DAMAGE_LABELS[tier]}
-                      </span>
-                    </div>
-                  )
-                )}
+        {/* Bottom bar: readout + detections toggle */}
+        <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[850] flex items-end justify-between gap-3 sm:inset-x-5 sm:bottom-5">
+          <div className="tabular rounded-xl bg-ink/80 px-3 py-2 font-mono text-2xs leading-relaxed text-haze backdrop-blur-md">
+            <div>
+              zoom <span className="text-paper">{telemetry.zoom.toFixed(1)}</span>
+            </div>
+            {georeferenced && telemetry.lat !== undefined && telemetry.lng !== undefined ? (
+              <div className="text-paper">
+                {telemetry.lat.toFixed(5)}, {telemetry.lng.toFixed(5)}
               </div>
-            )}
-
-            {showDamage && (
-              <button
-                onClick={() => setShowLegend(!showLegend)}
-                className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-400 border border-slate-700/60 backdrop-blur-md shadow-md"
-              >
-                {showLegend ? "Hide Legend" : "Show Legend"}
-              </button>
+            ) : (
+              <div className="hidden sm:block">{georeferenced ? "hover the map for coordinates" : "not georeferenced"}</div>
             )}
           </div>
 
-          {/* Right: Damage Toggle Button */}
           <button
-            onClick={() => setShowDamage(!showDamage)}
-            className={`pointer-events-auto px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-xl backdrop-blur-md flex items-center gap-2 border ${
-              showDamage
-                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-cyan-500/20"
-                : "bg-slate-900/90 text-slate-400 border-slate-700/80 hover:text-slate-200"
+            onClick={toggleDamage}
+            aria-pressed={showDamage}
+            title="Show or hide the model's detections (D)"
+            className={`pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium ring-1 backdrop-blur-md transition ${
+              showDamage ? "bg-paper text-ink ring-paper" : "bg-ink/80 text-haze ring-signal/20 hover:text-paper"
             }`}
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                showDamage ? "bg-cyan-400 animate-pulse" : "bg-slate-500"
-              }`}
-            />
-            <span>{showDamage ? "Damage Layer ON" : "Damage Layer OFF"}</span>
+            <Layers className="h-4 w-4" />
+            {showDamage ? "Detections on" : "Detections off"}
           </button>
         </div>
       </div>
