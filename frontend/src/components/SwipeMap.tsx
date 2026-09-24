@@ -34,7 +34,10 @@ function MapBridge({
     }
     onMapReady(map);
     map.fitBounds(bounds, { padding: [20, 20] });
-  }, [map, bounds, onMapReady]);
+    // Fit once per map. `bounds` is a new array on every parent render, so
+    // depending on it re-fitted the view whenever the divider moved.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
   return null;
 }
 
@@ -76,7 +79,7 @@ function SwipeController({
 
     // Clip the Damage GeoJSON SVG if present
     const svgEl = containerRef.current.querySelector(
-      ".leaflet-damagePane-pane svg, .leaflet-overlay-pane svg"
+      ".leaflet-damage-pane svg, .leaflet-overlay-pane svg"
     ) as SVGElement | null;
     if (svgEl) {
       const svgRect = svgEl.getBoundingClientRect();
@@ -101,6 +104,9 @@ function SwipeController({
     zoom: applyClip,
     resize: applyClip,
     viewreset: applyClip,
+    moveend: () => requestAnimationFrame(applyClip),
+    zoomend: () => requestAnimationFrame(applyClip),
+    layeradd: () => requestAnimationFrame(applyClip),
   });
 
   // Ensure clip applies when the overlay image finishes loading
