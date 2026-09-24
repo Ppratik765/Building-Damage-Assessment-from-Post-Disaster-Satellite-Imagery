@@ -106,7 +106,7 @@ export default function TerrainBackground() {
 
     let width = 0;
     let height = 0;
-    let cell = 26;
+    let cell = 12;
     let cols = 0;
     let rows = 0;
     let field = new Float32Array(0);
@@ -119,7 +119,7 @@ export default function TerrainBackground() {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       width = window.innerWidth;
       height = window.innerHeight;
-      cell = width < 640 ? 32 : 26;
+      cell = width < 640 ? 16 : 10;
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
@@ -239,16 +239,13 @@ export default function TerrainBackground() {
     };
 
     let raf = 0;
-    let last = 0;
     const start = performance.now();
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
-      if (now - last < 33) return; // ~30 fps is plenty for drifting terrain
-      last = now;
 
       if (now - lastMove > 2600) pointer.target = 0;
-      pointer.x += (pointer.tx - pointer.x) * 0.12;
-      pointer.y += (pointer.ty - pointer.y) * 0.12;
+      pointer.x += (pointer.tx - pointer.x) * 0.35;
+      pointer.y += (pointer.ty - pointer.y) * 0.35;
       pointer.strength += (pointer.target - pointer.strength) * 0.06;
 
       draw((now - start) / 1000);
