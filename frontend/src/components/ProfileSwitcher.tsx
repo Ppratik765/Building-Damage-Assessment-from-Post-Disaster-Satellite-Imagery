@@ -63,7 +63,7 @@ export default function ProfileSwitcher({
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
-            <span className="relative flex items-center gap-2 whitespace-nowrap">
+            <span className="relative flex items-center justify-center gap-2 whitespace-nowrap">
               {p.shortName}
               <span className={`tabular text-xs ${isActive ? "text-ink/60" : "text-faint"}`}>
                 {siteCounts[key]}
