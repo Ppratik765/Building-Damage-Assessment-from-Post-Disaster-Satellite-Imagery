@@ -236,7 +236,7 @@ export default function DisasterCatalog({ manifests, initialProfile = "data" }: 
               <input
                 ref={searchRef}
                 type="search"
-                placeholder="Search events or places"
+                placeholder="Search sites"
                 aria-label="Search sites"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
