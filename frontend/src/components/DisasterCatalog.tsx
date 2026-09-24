@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import type { Manifest, DataProfile } from "@/lib/types";
+import { AnimatePresence, motion } from "framer-motion";
+import { Activity, Flame, LayoutGrid, Search, Waves, Wind, X, CircleDot } from "lucide-react";
+import type { DamageSummary, DataProfile, Manifest } from "@/lib/types";
 import { PROFILES } from "@/lib/types";
 import SiteCard from "@/components/SiteCard";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
+import SeverityBar from "@/components/SeverityBar";
+import AnimatedNumber from "@/components/AnimatedNumber";
+import { CATEGORY_LABELS, categoryOf, cleanName, damagedCount, siteLabel, type Category } from "./siteFormat";
 
 interface DisasterCatalogProps {
   manifests: {
@@ -15,13 +20,20 @@ interface DisasterCatalogProps {
   initialProfile?: DataProfile;
 }
 
-export default function DisasterCatalog({
-  manifests,
-  initialProfile = "data",
-}: DisasterCatalogProps) {
+type SortKey = "order" | "buildings" | "damage";
+
+const CATEGORY_ICONS: Record<Category | "all", typeof Waves> = {
+  all: LayoutGrid,
+  flood: Waves,
+  earthquake: Activity,
+  wind: Wind,
+  fire: Flame,
+  other: CircleDot,
+};
+
+export default function DisasterCatalog({ manifests, initialProfile = "data" }: DisasterCatalogProps) {
   const searchParams = useSearchParams();
 
-  // Profile selection
   const profileParam = (searchParams.get("profile") as DataProfile) || initialProfile;
   const validProfile: DataProfile = profileParam in PROFILES ? profileParam : "data";
   const [currentProfile, setCurrentProfile] = useState<DataProfile>(validProfile);
@@ -30,289 +42,262 @@ export default function DisasterCatalog({
     if (profileParam in PROFILES && profileParam !== currentProfile) {
       setCurrentProfile(profileParam);
     }
-  }, [profileParam, currentProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileParam]);
 
-  // Category and search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [category, setCategory] = useState<Category | "all">("all");
+  const [sort, setSort] = useState<SortKey>("order");
+  const [onlyWithBuildings, setOnlyWithBuildings] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  const currentManifest = manifests[currentProfile] || manifests.data;
-  const sites = currentManifest.sites;
+  const sites = (manifests[currentProfile] || manifests.data).sites;
 
-  // Aggregate stats for current profile
-  const totalStructures = useMemo(
-    () => sites.reduce((sum, s) => sum + (s.summary?.total_structures || 0), 0),
+  // Reset the category if it doesn't exist in the newly selected profile
+  useEffect(() => {
+    if (category !== "all" && !sites.some((s) => categoryOf(s) === category)) setCategory("all");
+  }, [sites, category]);
+
+  // Press "/" anywhere to jump to search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.key === "/" && !/input|textarea|select/i.test(target.tagName)) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const aggregate: DamageSummary = useMemo(
+    () =>
+      sites.reduce(
+        (acc, s) => ({
+          total_structures: acc.total_structures + (s.summary?.total_structures || 0),
+          no_damage: acc.no_damage + (s.summary?.no_damage || 0),
+          minor_damage: acc.minor_damage + (s.summary?.minor_damage || 0),
+          major_damage: acc.major_damage + (s.summary?.major_damage || 0),
+          destroyed: acc.destroyed + (s.summary?.destroyed || 0),
+        }),
+        { total_structures: 0, no_damage: 0, minor_damage: 0, major_damage: 0, destroyed: 0 }
+      ),
     [sites]
   );
-  const totalDestroyed = useMemo(
-    () => sites.reduce((sum, s) => sum + (s.summary?.destroyed || 0), 0),
-    [sites]
-  );
-  const totalMajor = useMemo(
-    () => sites.reduce((sum, s) => sum + (s.summary?.major_damage || 0), 0),
-    [sites]
-  );
 
-  // Filtered sites
+  const categories = useMemo(() => {
+    const counts = new Map<Category, number>();
+    sites.forEach((s) => counts.set(categoryOf(s), (counts.get(categoryOf(s)) || 0) + 1));
+    return Array.from(counts.entries());
+  }, [sites]);
+
   const filteredSites = useMemo(() => {
-    return sites.filter((site) => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        site.name.toLowerCase().includes(q) ||
-        site.id.toLowerCase().includes(q) ||
-        (site.disaster_type && site.disaster_type.toLowerCase().includes(q)) ||
-        (site.location_name && site.location_name.toLowerCase().includes(q));
-
-      if (!matchesSearch) return false;
-
-      if (selectedCategory === "all") return true;
-
-      const nameLower = site.name.toLowerCase();
-      const typeLower = (site.disaster_type || "").toLowerCase();
-
-      if (selectedCategory === "flood") {
-        return (
-          nameLower.includes("flood") ||
-          typeLower.includes("flood") ||
-          nameLower.includes("water")
-        );
-      }
-      if (selectedCategory === "earthquake") {
-        return (
-          nameLower.includes("earthquake") ||
-          typeLower.includes("earthquake") ||
-          nameLower.includes("jajarkot")
-        );
-      }
-      if (selectedCategory === "hurricane") {
-        return (
-          nameLower.includes("hurricane") ||
-          nameLower.includes("typhoon") ||
-          typeLower.includes("hurricane")
-        );
-      }
-      if (selectedCategory === "fire") {
-        return nameLower.includes("fire") || typeLower.includes("fire");
-      }
-
-      return true;
+    const q = searchQuery.toLowerCase().trim();
+    const list = sites.filter((site) => {
+      if (onlyWithBuildings && site.summary.total_structures === 0) return false;
+      if (category !== "all" && categoryOf(site) !== category) return false;
+      if (!q) return true;
+      const haystack = [cleanName(site.name), site.id, site.disaster_type, site.disaster_name, site.location_name, siteLabel(site).event]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
     });
-  }, [sites, searchQuery, selectedCategory]);
+    if (sort === "buildings") return [...list].sort((a, b) => b.summary.total_structures - a.summary.total_structures);
+    if (sort === "damage")
+      return [...list].sort(
+        (a, b) => damagedCount(b.summary) - damagedCount(a.summary) || b.summary.destroyed - a.summary.destroyed
+      );
+    return list;
+  }, [sites, searchQuery, category, sort, onlyWithBuildings]);
+
+  const clearAll = () => {
+    setSearchQuery("");
+    setCategory("all");
+    setOnlyWithBuildings(false);
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Profile Selector Banner */}
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="text-xs uppercase font-mono tracking-widest text-slate-400">
-          Select Data Profile
+    <div className="space-y-10">
+      {/* Heading + dataset switch */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-xl space-y-3">
+          <h2 className="type-display text-4xl text-paper sm:text-5xl">Browse the sites</h2>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentProfile}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25 }}
+              className="text-base leading-relaxed text-haze"
+            >
+              {PROFILES[currentProfile].description}.
+            </motion.p>
+          </AnimatePresence>
         </div>
         <ProfileSwitcher
           currentProfile={currentProfile}
           onProfileChange={setCurrentProfile}
-          siteCounts={{
-            data: manifests.data.sites.length,
-            data1: manifests.data1.sites.length,
-          }}
+          siteCounts={{ data: manifests.data.sites.length, data1: manifests.data1.sites.length }}
+          className="self-start lg:self-auto"
         />
-        <p className="text-xs text-slate-400 max-w-lg">
-          {PROFILES[currentProfile].description}
-        </p>
       </div>
 
-      {/* Profile Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
-        <div className="glass-card p-3 sm:p-4 text-center rounded-xl border border-slate-800">
-          <div className="font-mono text-xl sm:text-2xl font-bold text-cyan-400">
-            {sites.length}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Total Sites</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center rounded-xl border border-slate-800">
-          <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">
-            {totalStructures}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Structures Analyzed</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center rounded-xl border border-slate-800">
-          <div className="font-mono text-xl sm:text-2xl font-bold text-orange-400">
-            {totalMajor}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Major Damage</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center rounded-xl border border-slate-800">
-          <div className="font-mono text-xl sm:text-2xl font-bold text-red-400">
-            {totalDestroyed}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Destroyed</div>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+      {/* Dataset-wide damage distribution */}
+      <div className="panel rounded-[22px] p-5 sm:p-6">
+        <SeverityBar key={currentProfile} summary={aggregate} height="h-3" />
+        <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
           {[
-            {
-              id: "all",
-              label: "All Disasters",
-              icon: (active: boolean) => (
-                <svg
-                  className={`w-3.5 h-3.5 ${active ? "text-slate-900" : "text-slate-400"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
-              ),
-            },
-            {
-              id: "flood",
-              label: "Flooding",
-              icon: (active: boolean) => (
-                <svg
-                  className={`w-3.5 h-3.5 ${active ? "text-slate-900" : "text-cyan-400"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M3 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M3 11c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"
-                  />
-                </svg>
-              ),
-            },
-            {
-              id: "earthquake",
-              label: "Earthquake",
-              icon: (active: boolean) => (
-                <svg
-                  className={`w-3.5 h-3.5 ${active ? "text-slate-900" : "text-amber-400"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2 12h4l3-7 4 14 3-9 2 4h4"
-                  />
-                </svg>
-              ),
-            },
-            {
-              id: "hurricane",
-              label: "Wind & Storm",
-              icon: (active: boolean) => (
-                <svg
-                  className={`w-3.5 h-3.5 ${active ? "text-slate-900" : "text-teal-400"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"
-                  />
-                </svg>
-              ),
-            },
-            {
-              id: "fire",
-              label: "Wildfire",
-              icon: (active: boolean) => (
-                <svg
-                  className={`w-3.5 h-3.5 ${active ? "text-slate-900" : "text-red-400"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.879 16.121A3 3 0 1012.001 11c-.5 1-1.5 2-2.122 5.121z"
-                  />
-                </svg>
-              ),
-            },
-          ].map((cat) => {
-            const isActive = selectedCategory === cat.id;
+            { label: "Scenes", value: sites.length, color: "text-paper" },
+            { label: "Buildings found", value: aggregate.total_structures, color: "text-paper" },
+            { label: "Damaged", value: damagedCount(aggregate), color: "text-damage-major" },
+            { label: "Destroyed", value: aggregate.destroyed, color: "text-damage-destroyed" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <dt className="text-sm text-haze">{stat.label}</dt>
+              <dd className={`type-wide mt-1 text-3xl font-semibold ${stat.color}`}>
+                <AnimatedNumber value={stat.value} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      {/* Filters */}
+      <div className="space-y-3">
+        <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {([["all", sites.length], ...categories] as [Category | "all", number][]).map(([id, count]) => {
+            const Icon = CATEGORY_ICONS[id];
+            const active = category === id;
             return (
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                  isActive
-                    ? "bg-slate-200 text-slate-900 font-semibold shadow-md"
-                    : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800"
+                key={id}
+                onClick={() => setCategory(id)}
+                aria-pressed={active}
+                className={`relative inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm transition-colors ${
+                  active ? "text-ink" : "text-haze hover:text-paper"
                 }`}
               >
-                {cat.icon(isActive)}
-                <span>{cat.label}</span>
+                {active && (
+                  <motion.span
+                    layoutId="category-pill"
+                    className="absolute inset-0 rounded-full bg-signal"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <Icon className="relative h-4 w-4" aria-hidden />
+                <span className="relative whitespace-nowrap">{id === "all" ? "All" : CATEGORY_LABELS[id]}</span>
+                <span className={`tabular relative text-xs ${active ? "text-ink/60" : "text-faint"}`}>{count}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Search input */}
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="Search disaster or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-1.5 pl-9 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/70 transition-colors"
-          />
-          <svg
-            className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        <div className="flex flex-col gap-3 border-t border-line/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <label className="inline-flex cursor-pointer items-center gap-2.5 self-start rounded-full py-1 text-sm text-haze hover:text-paper">
+            <input
+              type="checkbox"
+              checked={onlyWithBuildings}
+              onChange={(e) => setOnlyWithBuildings(e.target.checked)}
+              className="peer sr-only"
+            />
+            <span className="relative h-5 w-9 shrink-0 rounded-full bg-line transition-colors peer-checked:bg-signal peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal">
+              <span
+                className={`absolute top-0.5 h-4 w-4 rounded-full bg-paper transition-transform duration-300 ${
+                  onlyWithBuildings ? "translate-x-[18px]" : "translate-x-0.5"
+                }`}
+              />
+            </span>
+            Only scenes with buildings
+          </label>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label="Sort sites"
+              className="panel shrink-0 cursor-pointer appearance-none rounded-full py-2 pl-3.5 pr-8 text-sm text-paper focus:outline-none focus-visible:outline-2 focus-visible:outline-signal"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238E9AC0' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 12px center",
+              }}
+            >
+              <option value="order">Catalog order</option>
+              <option value="damage">Most damaged first</option>
+              <option value="buildings">Most buildings first</option>
+            </select>
+
+            <div className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" aria-hidden />
+              <input
+                ref={searchRef}
+                type="search"
+                placeholder="Search events or places"
+                aria-label="Search sites"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setSearchQuery("");
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="panel w-full rounded-full py-2 pl-10 pr-10 text-sm text-paper placeholder:text-faint focus:border-signal/60 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+              />
+              {searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-haze hover:text-paper"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-line px-1.5 font-mono text-2xs text-faint sm:block">
+                  /
+                </kbd>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Grid of Site Cards */}
+      {/* Grid */}
       {filteredSites.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredSites.map((site) => (
-            <SiteCard key={site.id} site={site} profile={currentProfile} />
-          ))}
-        </div>
+        <motion.div layout className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {filteredSites.map((site, i) => (
+              <motion.div
+                key={`${currentProfile}-${site.id}`}
+                layout
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{
+                  layout: { type: "spring", stiffness: 380, damping: 36 },
+                  default: { duration: 0.35, delay: Math.min(i, 9) * 0.035, ease: [0.22, 1, 0.36, 1] },
+                }}
+              >
+                <SiteCard site={site} profile={currentProfile} priority={i < 3} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       ) : (
-        <div className="py-16 text-center rounded-2xl bg-slate-900/40 border border-slate-800">
-          <p className="text-slate-400 text-sm">
-            No disaster sites match your search or filter criteria.
+        <div className="panel rounded-[22px] px-6 py-16 text-center">
+          <p className="type-wide text-lg font-semibold text-paper">No sites match these filters</p>
+          <p className="mt-1 text-sm text-haze">
+            {searchQuery ? `Nothing in this dataset mentions “${searchQuery}”.` : "Try another disaster type or dataset."}
           </p>
           <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("all");
-            }}
-            className="mt-3 text-xs text-cyan-400 hover:underline"
+            onClick={clearAll}
+            className="mt-5 rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink hover:bg-white"
           >
-            Clear filters
+            Clear search and filters
           </button>
         </div>
       )}
