@@ -89,10 +89,10 @@ flowchart LR
 
 | Tier | Class | Description | Colour |
 |:----:|:------|:------------|:------:|
-| **0** | No damage | Undamaged structure, intact roof and walls | `#22c55e` (Green) |
-| **1** | Minor | Partially damaged roof, missing tiles or gutters | `#eab308` (Yellow) |
-| **2** | Major | Partial wall collapse, substantial roof compromise | `#f97316` (Orange) |
-| **3** | Destroyed | Structure collapsed, total structural failure | `#ef4444` (Red) |
+| **0** | No damage | Undamaged structure, intact roof and walls | 🟩 `#22c55e` |
+| **1** | Minor | Partially damaged roof, missing tiles or gutters | 🟨 `#eab308` |
+| **2** | Major | Partial wall collapse, substantial roof compromise | 🟧 `#f97316` |
+| **3** | Destroyed | Structure collapsed, total structural failure | 🟥 `#ef4444` |
 
 ### The imbalance problem
 
