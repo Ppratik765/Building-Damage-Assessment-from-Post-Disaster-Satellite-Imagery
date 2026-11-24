@@ -18,7 +18,7 @@
 **Automated building localization and damage grading from before/after satellite imagery,
 with an interactive swipe-to-compare web viewer.**
 
-[Live demo](https://damagelens.vercel.app) · [Architecture](#-architecture) · [Results](#-results) · [Real-world sites](#-real-world-sites) · [Getting started](#-getting-started)
+[Live demo](https://damagelens.vercel.app) · [Architecture](#architecture) · [Results](#results) · [Real-world sites](#real-world-sites) · [Getting started](#getting-started)
 
 </div>
 
@@ -41,15 +41,15 @@ Drag-style before/after comparison on real satellite scenes. Predicted building 
 
 ## What is inside
 
-| | Folder | What it is |
-|:-:|:--|:--|
-| 🧠 | **`notebook/`** | Self-contained PyTorch training, validation and evaluation pipeline (`SiameseDamageNet`, ResNet-50 backbone, single-GPU) that exports standardized damage assessments |
-| 🛰️ | **`frontend/`** | Next.js 14 viewer with before/after swipe, toggleable damage overlays, two dataset profiles, keyboard navigation and evaluation gallery |
-| 📜 | **`docs/`** | Data contract between ML inference outputs and the frontend |
+| Folder | What it is |
+|:--|:--|
+| **`notebook/`** | Self-contained PyTorch training, validation and evaluation pipeline (`SiameseDamageNet`, ResNet-50 backbone, single-GPU) that exports standardized damage assessments |
+| **`frontend/`** | Next.js 14 viewer with before/after swipe, toggleable damage overlays, two dataset profiles, keyboard navigation and evaluation gallery |
+| **`docs/`** | Data contract between ML inference outputs and the frontend |
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 <img src="assets/architecture.svg" alt="Siamese architecture" width="100%"/>
 
@@ -83,16 +83,16 @@ flowchart LR
 
 ---
 
-## 🎨 Damage scale
+## Damage scale
 
 <img src="assets/damage-scale.svg" alt="xBD joint damage scale" width="100%"/>
 
 | Tier | Class | Description | Colour |
 |:----:|:------|:------------|:------:|
-| **0** | No damage | Undamaged structure, intact roof and walls | 🟩 `#22c55e` |
-| **1** | Minor | Partially damaged roof, missing tiles or gutters | 🟨 `#eab308` |
-| **2** | Major | Partial wall collapse, substantial roof compromise | 🟧 `#f97316` |
-| **3** | Destroyed | Structure collapsed, total structural failure | 🟥 `#ef4444` |
+| **0** | No damage | Undamaged structure, intact roof and walls | `#22c55e` (Green) |
+| **1** | Minor | Partially damaged roof, missing tiles or gutters | `#eab308` (Yellow) |
+| **2** | Major | Partial wall collapse, substantial roof compromise | `#f97316` (Orange) |
+| **3** | Destroyed | Structure collapsed, total structural failure | `#ef4444` (Red) |
 
 ### The imbalance problem
 
@@ -102,7 +102,7 @@ Undamaged pixels dominate, so a naive model learns to say "no damage" everywhere
 
 ---
 
-## 📊 Results
+## Results
 
 <img src="assets/results.svg" alt="Test results" width="100%"/>
 
@@ -130,7 +130,7 @@ Trained at full 1024×1024 with `AdamW` (`lr=1e-4`, `weight_decay=1e-5`) and mix
 
 ---
 
-## 🌍 Real-world sites
+## Real-world sites
 
 Beyond the xBD benchmark, the model was run zero-shot on Maxar Open Data scenes: the **Jajarkot earthquake (Nepal)**, **Nepal floods 2024** and the **Sikkim GLOF floods (India)**. Open the [live demo](https://damagelens.vercel.app) to swipe through all of them.
 
@@ -141,7 +141,7 @@ The frontend exposes two dataset profiles under `frontend/public/`:
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
 ### 1. Training & Evaluation (`notebook/`)
 
@@ -174,31 +174,7 @@ npm run start
 
 ---
 
-## Data Contract
-
-To keep the PyTorch training notebook and Next.js frontend decoupled, all inference outputs conform to [`docs/data_contract.md`](docs/data_contract.md):
-
-```text
-frontend/public/
-├── data/                         # Benchmark & Disasters profile
-│   ├── manifest.json
-│   ├── confusion_matrix.png
-│   ├── test_predictions.png
-│   └── <site_id>/
-│       ├── pre.png
-│       ├── post.png
-│       └── damage.geojson
-└── data1/                        # Pure Real-World Satellite profile
-    ├── manifest.json
-    └── <site_id>/
-        ├── pre.png
-        ├── post.png
-        └── damage.geojson
-```
-
----
-
-## 🔌 Data contract
+## Data contract
 
 To keep the PyTorch notebook and the Next.js frontend decoupled, all inference outputs follow [`docs/data_contract.md`](docs/data_contract.md):
 
@@ -222,12 +198,11 @@ frontend/public/
 
 ---
 
-## 🧰 Tech stack
+## Tech stack
 
 - **Model & Training**: PyTorch 2.5, Torchvision, `segmentation-models-pytorch`, HuggingFace `datasets`, Albumentations, OpenCV, Rasterio, Shapely, GeoPandas, Matplotlib, scikit-learn, SciPy, `pystac-client`, `leafmap`, `rio-tiler`
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Framer Motion, React-Leaflet / Leaflet, Lucide Icons
 - **Fonts & Typography**: Self-hosted Archivo Variable (`@fontsource-variable/archivo`) & IBM Plex Mono (`@fontsource/ibm-plex-mono`)
-
 
 ---
 
