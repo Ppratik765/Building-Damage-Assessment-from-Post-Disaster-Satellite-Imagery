@@ -1,90 +1,147 @@
-# Damage Assessment from Post-Disaster Satellite Imagery
+<div align="center">
 
-An end-to-end deep learning and geospatial web platform for automated building localization and damage grading from pre- and post-disaster satellite imagery.
+<img src="assets/banner.svg" alt="DamageLens" width="100%"/>
 
-Built on the **xBD dataset** and **Maxar Open Data** disaster imagery, this repository contains:
+<br/>
 
-1. **`notebook/`**: A self-contained PyTorch Siamese FPN network (`SiameseDamageNet`, ResNet-50 backbone) training, validation, and evaluation pipeline optimized for single-GPU environments (NVIDIA L4 GPU / CUDA or CPU dry-run), exporting standardized damage assessments.
-2. **`frontend/`**: A Next.js 14 web application featuring an interactive before/after satellite swipe comparison, toggleable damage vector overlays, dual dataset profiles (`data` and `data1`), keyboard navigation, and training evaluation visualizations.
-3. **`docs/`**: Strict data contract defining the shared interface between ML inference outputs and the visualization frontend.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-damagelens.vercel.app-0EA5E9?style=for-the-badge&logo=vercel&logoColor=white)](https://damagelens.vercel.app)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.5-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+
+![Localization F1](https://img.shields.io/badge/Localization%20F1-0.809-22C55E?style=flat-square)
+![Damage F1](https://img.shields.io/badge/Damage%20macro%20F1-0.706-EAB308?style=flat-square)
+![Score](https://img.shields.io/badge/xView2--style%20score-0.737-2563EB?style=flat-square)
+![Dataset](https://img.shields.io/badge/trained%20on-xBD-7C3AED?style=flat-square)
+![GPU](https://img.shields.io/badge/1%C3%97%20NVIDIA%20L4-~2.5h-76B900?style=flat-square&logo=nvidia&logoColor=white)
+
+**Automated building localization and damage grading from before/after satellite imagery,
+with an interactive swipe-to-compare web viewer.**
+
+[Live demo](https://damagelens.vercel.app) · [Architecture](#-architecture) · [Results](#-results) · [Real-world sites](#-real-world-sites) · [Getting started](#-getting-started)
+
+</div>
 
 ---
 
-## Architecture Overview
+## See it in action
 
-```text
-Satellite Imagery (Pre & Post, 1024x1024)
-         │
-         ▼
-┌────────────────────────────────────────────────────────────────┐
-│  Shared-Weight Siamese Encoder (ResNet-50, ImageNet weights)   │
-│  Extracts 5-stage multi-scale feature pyramids F_pre, F_post   │
-└────────────────────────────────────────────────────────────────┘
-         │
-    ┌────┴────────────────────────────────────────┐
-    ▼                                             ▼
-Localization FPN Decoder                 Damage FPN Decoder
-Input: F_pre (top 4 pyramid levels)      Input: [|F_pre - F_post| || F_post]
-Loss:  BCE + Dice                        Loss:  Class-weighted Cross-Entropy
-Output: Binary building mask             Output: 4-tier damage grade
-    └────┬────────────────────────────────────────┘
-         ▼
-Standardized Output Contract (`manifest.json`, GeoJSON, PNGs)
-         │
-         ▼
-┌────────────────────────────────────────────────────────────────┐
-│  Next.js 14 Geospatial Web Visualizer                          │
-│  - Interactive pre/post swipe divider (Leaflet / React-Leaflet)│
-│  - Toggleable per-tier building damage polygon overlays        │
-│  - Dual dataset profiles (Benchmark & Disasters / Maxar OOD)   │
-│  - Evaluation gallery (confusion matrix & test predictions)    │
-└────────────────────────────────────────────────────────────────┘
+Drag-style before/after comparison on real satellite scenes. Predicted building footprints are coloured by damage tier.
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="assets/swipe_hurricane_matthew.gif" alt="Hurricane Matthew swipe comparison" width="100%"/><br/><b>Hurricane Matthew</b> (xBD test tile)<br/><sub>33 buildings: 25 minor, 8 destroyed</sub></td>
+<td align="center" width="50%"><img src="assets/swipe_nepal_floods_2024.gif" alt="Nepal floods 2024 swipe comparison" width="100%"/><br/><b>Nepal Floods 2024</b> (Maxar, zero-shot)<br/><sub>125 structures: 98 none, 2 minor, 2 major, 23 destroyed</sub></td>
+</tr>
+</table>
+
+> The Nepal scene has no ground truth. It shows how the model behaves on imagery it never saw, not a measured accuracy.
+
+---
+
+## What is inside
+
+| | Folder | What it is |
+|:-:|:--|:--|
+| 🧠 | **`notebook/`** | Self-contained PyTorch training, validation and evaluation pipeline (`SiameseDamageNet`, ResNet-50 backbone, single-GPU) that exports standardized damage assessments |
+| 🛰️ | **`frontend/`** | Next.js 14 viewer with before/after swipe, toggleable damage overlays, two dataset profiles, keyboard navigation and evaluation gallery |
+| 📜 | **`docs/`** | Data contract between ML inference outputs and the frontend |
+
+---
+
+## 🏗 Architecture
+
+<img src="assets/architecture.svg" alt="Siamese architecture" width="100%"/>
+
+<details>
+<summary><b>Pipeline as a flowchart</b></summary>
+
+```mermaid
+flowchart LR
+    A[Pre-event tile<br/>1024x1024]:::pre --> E
+    B[Post-event tile<br/>1024x1024]:::post --> E
+    E{{Shared ResNet-50<br/>encoder}} --> FP[F_pre]
+    E --> FQ[F_post]
+    FP --> L[FPN decoder<br/>BCE + Dice]
+    FP --> D
+    FQ --> D[FPN decoder<br/>weighted CE]
+    L --> M[Building mask]
+    D --> G[4-class damage map]
+    M --> V[manifest.json<br/>GeoJSON / PNG]
+    G --> V
+    V --> W[Next.js swipe viewer]
+    classDef pre fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A
+    classDef post fill:#FFEDD5,stroke:#EA580C,color:#7C2D12
 ```
 
-- **Model**: `SiameseDamageNet` (~27.3M parameters), pairing a shared `resnet50` encoder (`segmentation-models-pytorch`, ImageNet pretrained) with two lightweight `FPNDecoder` heads (`decoder_dim=128`, top 4 pyramid levels).
-- **Change Fusion**: The same ResNet-50 encoder reads the before and the after image. We take the absolute difference of their features (`|F_pre - F_post|`, what changed) and concatenate it with the after features (`F_post`, what the building looks like now) before decoding into per-building damage grades.
+</details>
+
+- **Model**: `SiameseDamageNet` (~27.3M parameters): a shared `resnet50` encoder (`segmentation-models-pytorch`, ImageNet pretrained) with two lightweight `FPNDecoder` heads (`decoder_dim=128`).
+- **Localization head** reads the pre-event features only and learns where buildings are.
+- **Damage head** reads `[|F_pre − F_post| ‖ F_post]` at every pyramid level: *what changed* plus *what the building looks like now*.
+- **Losses**: localization = 0.5·BCE + 0.5·Dice; damage = class-weighted cross-entropy on ground-truth building pixels.
 
 ---
 
-## Evaluation Results
+## 🎨 Damage scale
 
-Trained at full `1024x1024` resolution with `AdamW` (`lr=1e-4`, `weight_decay=1e-5`) and `bfloat16` mixed precision on an NVIDIA L4 GPU across 2,781 filtered xBD training pairs (best checkpoint at epoch 7, early stopping at epoch 10):
+<img src="assets/damage-scale.svg" alt="xBD joint damage scale" width="100%"/>
 
-| Metric | Test Set Score |
-|:-------|:--------------:|
-| **Localization F1** (binary) | `0.8089` |
-| **Damage F1 (Macro)** (building pixels) | `0.7055` |
-| — No Damage (Tier 0) | `0.9161` |
-| — Minor Damage (Tier 1) | `0.4056` |
-| — Major Damage (Tier 2) | `0.6899` |
-| — Destroyed (Tier 3) | `0.8104` |
-| **Weighted Score** (`0.3 × Loc F1 + 0.7 × Damage Macro F1`) | `0.7365` |
+| Tier | Class | Description | Colour |
+|:----:|:------|:------------|:------:|
+| **0** | No damage | Undamaged structure, intact roof and walls | 🟩 `#22c55e` |
+| **1** | Minor | Partially damaged roof, missing tiles or gutters | 🟨 `#eab308` |
+| **2** | Major | Partial wall collapse, substantial roof compromise | 🟧 `#f97316` |
+| **3** | Destroyed | Structure collapsed, total structural failure | 🟥 `#ef4444` |
 
----
+### The imbalance problem
 
-## Damage Classification Tiers
+Undamaged pixels dominate, so a naive model learns to say "no damage" everywhere. Class weights `w = N / (K · n_c)` fix that.
 
-Following the xBD Joint Damage Scale:
-
-| Tier | Class Label | Severity Description | Color Code |
-|:----:|:------------|:---------------------|:----------:|
-| **0** | No Damage | Undamaged structure, intact roof & walls | `#22c55e` (Green) |
-| **1** | Minor Damage | Partially damaged roof, missing tiles/gutters | `#eab308` (Yellow) |
-| **2** | Major Damage | Partial wall collapse, substantial roof compromise | `#f97316` (Orange) |
-| **3** | Destroyed | Structure collapsed, total structural failure | `#ef4444` (Red) |
+<img src="assets/imbalance.svg" alt="Class imbalance" width="100%"/>
 
 ---
 
-## Datasets & Profiles
+## 📊 Results
 
-The frontend exposes two selectable dataset profiles under `frontend/public/`:
+<img src="assets/results.svg" alt="Test results" width="100%"/>
 
-- **`data/` — Benchmark & Disasters (`xBD + Real`)**: 16 scenes combining 4 xBD test-set tiles (`Socal Fire`, `Hurricane Matthew`, `Midwest Flooding`, `Hurricane Harvey`) with 12 Maxar Open Data scenes (`Jajarkot Earthquake, Nepal`, `Nepal Floods 2024`, `Sikkim GLOF Floods, India`), plus `confusion_matrix.png` and `test_predictions.png`.
-- **`data1/` — Pure Real-World Satellite (`Maxar OOD`)**: 20 Maxar Open Data scenes covering `Sikkim Flash Floods, India (Teesta Basin)` and `Jajarkot Earthquake, Nepal`.
+Trained at full 1024×1024 with `AdamW` (`lr=1e-4`, `weight_decay=1e-5`) and mixed precision on one NVIDIA L4 across 2,781 filtered xBD pairs (1,946 train / 417 val / 418 test, split by disaster type). Best checkpoint at epoch 7 with early stopping.
+
+| Metric | Test score |
+|:-------|:----------:|
+| **Localization F1** (binary, threshold 0.5) | `0.8089` |
+| **Damage F1, macro** (building pixels) | `0.7055` |
+| &nbsp;&nbsp;No damage | `0.9161` |
+| &nbsp;&nbsp;Minor | `0.4056` |
+| &nbsp;&nbsp;Major | `0.6899` |
+| &nbsp;&nbsp;Destroyed | `0.8104` |
+| **xView2-style combined score** `0.3 × Loc F1 + 0.7 × Damage macro F1` | `0.7365` |
+
+<details>
+<summary><b>How to read these numbers honestly</b></summary>
+
+- Our macro F1 is the **arithmetic** mean of the four class F1s. The official xView2 challenge uses the **harmonic** mean, which punishes a weak class harder. Under that rule this model scores about **0.64** damage and **0.69** combined.
+- The split is by disaster type and is **not** the official xView2 split, so these numbers must not be compared with the challenge leaderboard.
+- The weakest class is Minor damage (F1 0.41), the hardest to see from above. Major damage is missed more often than over-called (33.5% under-predicted vs 4.2% over).
+- Real-world Maxar sites have no ground truth and are qualitative only.
+
+</details>
 
 ---
 
-## Getting Started
+## 🌍 Real-world sites
+
+Beyond the xBD benchmark, the model was run zero-shot on Maxar Open Data scenes: the **Jajarkot earthquake (Nepal)**, **Nepal floods 2024** and the **Sikkim GLOF floods (India)**. Open the [live demo](https://damagelens.vercel.app) to swipe through all of them.
+
+The frontend exposes two dataset profiles under `frontend/public/`:
+
+- **`data/` Benchmark & Disasters (`xBD + Real`)**: 16 scenes, combining 4 xBD test tiles (`Socal Fire`, `Hurricane Matthew`, `Midwest Flooding`, `Hurricane Harvey`) with 12 Maxar scenes, plus `confusion_matrix.png` and `test_predictions.png`.
+- **`data1/` Pure Real-World Satellite (`Maxar OOD`)**: 20 Maxar scenes covering the Sikkim flash floods (Teesta basin) and the Jajarkot earthquake.
+
+---
+
+## 🚀 Getting started
 
 ### 1. Training & Evaluation (`notebook/`)
 
@@ -141,8 +198,39 @@ frontend/public/
 
 ---
 
-## Tech Stack
+## 🔌 Data contract
+
+To keep the PyTorch notebook and the Next.js frontend decoupled, all inference outputs follow [`docs/data_contract.md`](docs/data_contract.md):
+
+```text
+frontend/public/
+├── data/                         # Benchmark & Disasters profile
+│   ├── manifest.json
+│   ├── confusion_matrix.png
+│   ├── test_predictions.png
+│   └── <site_id>/
+│       ├── pre.png
+│       ├── post.png
+│       └── damage.geojson
+└── data1/                        # Pure Real-World Satellite profile
+    ├── manifest.json
+    └── <site_id>/
+        ├── pre.png
+        ├── post.png
+        └── damage.geojson
+```
+
+---
+
+## 🧰 Tech stack
 
 - **Model & Training**: PyTorch 2.5, Torchvision, `segmentation-models-pytorch`, HuggingFace `datasets`, Albumentations, OpenCV, Rasterio, Shapely, GeoPandas, Matplotlib, scikit-learn, SciPy, `pystac-client`, `leafmap`, `rio-tiler`
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Framer Motion, React-Leaflet / Leaflet, Lucide Icons
 - **Fonts & Typography**: Self-hosted Archivo Variable (`@fontsource-variable/archivo`) & IBM Plex Mono (`@fontsource/ibm-plex-mono`)
+
+
+---
+
+<div align="center">
+<sub>Built with PyTorch, Next.js and a lot of satellite pixels. Imagery: xBD dataset and Maxar Open Data.</sub>
+</div>

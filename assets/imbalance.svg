@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-label="Pixel share per damage class on the test split">
+<style>.t{font-family:'Segoe UI',Helvetica,Arial,sans-serif}@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}.bar{transform-origin:260px 0;animation:grow 1.4s cubic-bezier(.2,.8,.2,1) both}.b2{animation-delay:.2s}.b3{animation-delay:.4s}.b4{animation-delay:.6s}</style>
+<rect width="1200" height="300" rx="20" fill="#F8FAFC" stroke="#CBD5E1"/>
+<g class="t" font-size="22" font-weight="600" fill="#0F172A"><text x="30" y="68">No damage</text><text x="30" y="128">Major</text><text x="30" y="188">Minor</text><text x="30" y="248">Destroyed</text></g>
+<g transform="translate(0 0)">
+<rect class="bar" x="260" y="42" width="722" height="36" rx="8" fill="#22C55E"/>
+<rect class="bar b2" x="260" y="102" width="137" height="36" rx="8" fill="#F97316"/>
+<rect class="bar b3" x="260" y="162" width="87" height="36" rx="8" fill="#EAB308"/>
+<rect class="bar b4" x="260" y="222" width="54" height="36" rx="8" fill="#EF4444"/></g>
+<g class="t" font-size="20" fill="#334155"><text x="995" y="68">72.20%</text><text x="410" y="128">13.65%</text><text x="360" y="188">8.70%</text><text x="327" y="248">5.44%</text></g>
+</svg>

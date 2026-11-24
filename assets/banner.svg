@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="DamageLens banner: satellite orbiting above a damage-coloured building grid">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1B3A"/><stop offset="1" stop-color="#164E63"/></linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#38BDF8" stop-opacity="0.45"/><stop offset="1" stop-color="#38BDF8" stop-opacity="0"/></radialGradient>
+<style>
+.t{font-family:'Segoe UI',Helvetica,Arial,sans-serif}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes drift{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+@keyframes scan{0%{transform:translateX(0)}100%{transform:translateX(250px)}}
+.b{animation:pulse 3s ease-in-out infinite}
+.d1{animation-delay:.2s}.d2{animation-delay:.9s}.d3{animation-delay:1.6s}.d4{animation-delay:2.2s}
+.title{animation:drift 6s ease-in-out infinite}
+.scan{animation:scan 4s linear infinite alternate}
+</style>
+</defs>
+<rect width="1200" height="340" rx="24" fill="url(#bg)"/>
+<g opacity=".18" stroke="#7DD3FC" stroke-width="1">
+<path d="M0 60H1200M0 120H1200M0 180H1200M0 240H1200M0 300H1200"/><path d="M100 0V340M200 0V340M300 0V340M400 0V340M500 0V340M600 0V340M700 0V340M800 0V340M900 0V340M1000 0V340M1100 0V340"/></g>
+<circle cx="930" cy="190" r="150" fill="url(#glow)"/>
+<g transform="translate(805 65)">
+<rect x="0" y="0" width="250" height="250" rx="14" fill="#0F2A4A" stroke="#38BDF8" stroke-opacity=".6"/>
+<rect class="b d1" x="22" y="30" width="46" height="38" rx="5" fill="#22C55E"/>
+<rect class="b d2" x="86" y="22" width="52" height="44" rx="5" fill="#22C55E"/>
+<rect class="b d3" x="158" y="38" width="62" height="34" rx="5" fill="#EAB308"/>
+<rect class="b d4" x="26" y="96" width="60" height="50" rx="5" fill="#F97316"/>
+<rect class="b d1" x="106" y="92" width="44" height="40" rx="5" fill="#22C55E"/>
+<rect class="b d3" x="170" y="102" width="54" height="52" rx="5" fill="#EF4444"/>
+<rect class="b d2" x="30" y="170" width="50" height="46" rx="5" fill="#EAB308"/>
+<rect class="b d4" x="100" y="162" width="66" height="54" rx="5" fill="#EF4444"/>
+<rect class="b d1" x="186" y="178" width="40" height="40" rx="5" fill="#22C55E"/>
+<rect class="scan" x="0" y="0" width="3" height="250" fill="#E0F2FE" opacity=".9"/>
+</g>
+<ellipse cx="930" cy="190" rx="270" ry="95" fill="none" stroke="#7DD3FC" stroke-width="2" stroke-dasharray="10 10" transform="rotate(-18 930 190)"/>
+<g><rect x="-16" y="-8" width="32" height="16" rx="3" fill="#F8FAFC"/><rect x="-38" y="-5" width="20" height="10" fill="#38BDF8"/><rect x="18" y="-5" width="20" height="10" fill="#38BDF8"/>
+<animateMotion dur="14s" repeatCount="indefinite" path="M660 190 a270 95 0 1 0 540 0 a270 95 0 1 0 -540 0" rotate="0"/></g>
+<g class="title">
+<text class="t" x="60" y="140" font-size="76" font-weight="800" fill="#F8FAFC">DamageLens</text>
+<text class="t" x="62" y="188" font-size="26" fill="#BAE6FD">Siamese change detection for building damage</text>
+<text class="t" x="62" y="222" font-size="26" fill="#BAE6FD">from before/after satellite imagery</text>
+</g>
+<g class="t" font-size="18" font-weight="600">
+<rect x="60" y="256" width="118" height="34" rx="17" fill="#22C55E"/><text x="119" y="279" text-anchor="middle" fill="#052E16">No damage</text>
+<rect x="188" y="256" width="86" height="34" rx="17" fill="#EAB308"/><text x="231" y="279" text-anchor="middle" fill="#422006">Minor</text>
+<rect x="284" y="256" width="86" height="34" rx="17" fill="#F97316"/><text x="327" y="279" text-anchor="middle" fill="#431407">Major</text>
+<rect x="380" y="256" width="110" height="34" rx="17" fill="#EF4444"/><text x="435" y="279" text-anchor="middle" fill="#fff">Destroyed</text></g>
+</svg>
