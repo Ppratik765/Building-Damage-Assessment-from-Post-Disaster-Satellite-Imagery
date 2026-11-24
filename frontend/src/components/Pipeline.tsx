@@ -9,11 +9,11 @@ const STEPS = [
   },
   {
     title: "Encode both the same way",
-    body: "A Siamese ResNet-34 encoder with shared weights turns each tile into features, so any difference comes from the ground, not the network.",
+    body: "A Siamese ResNet-50 encoder with shared weights turns each tile into features, so any difference comes from the ground, not the network.",
   },
   {
     title: "Subtract to find change",
-    body: "The difference |f_post − f_pre| is fused with the decoder’s skip connections to highlight what changed.",
+    body: "The same ResNet-50 encoder reads the before and the after image. We take the absolute difference of their features (what changed) and join it with the after features (what the building looks like now). A decoder turns this into a damage grade for each building.",
   },
   {
     title: "Locate and grade",

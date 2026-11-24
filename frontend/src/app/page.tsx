@@ -58,7 +58,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               className="rise mt-7 max-w-[46ch] text-lg leading-relaxed text-haze"
               style={{ animationDelay: "650ms" }}
             >
-              A Siamese U-Net compares satellite tiles captured before and after a disaster, outlines every building it
+              A Siamese FPN network compares satellite tiles captured before and after a disaster, outlines every building it
               finds and grades the damage. Move across the image to see what changed.
             </p>
 
@@ -130,7 +130,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <div className="flex items-center gap-3">
             <BrandMark className="h-6 w-6" />
             <p className="text-sm text-haze">
-              Built on the xBD dataset and Maxar Open Data imagery with a PyTorch Siamese U-Net.
+              Built on the xBD dataset and Maxar Open Data imagery with a PyTorch Siamese FPN network.
             </p>
           </div>
           <a
