@@ -23,3 +23,9 @@ frontend/out/
 # Python
 __pycache__/
 *.pyc
+
+# Remotion video project (track only rendered output MP4)
+video/*
+!video/out/
+video/out/*
+!video/out/damagelens-linkedin-4x5.mp4
